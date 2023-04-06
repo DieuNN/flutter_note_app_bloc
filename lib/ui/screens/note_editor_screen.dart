@@ -245,8 +245,8 @@ class _NoteEditorState extends State<NoteEditor> {
     context.read<NoteBloc>().add(NoteInitEvent());
   }
 
-  NoteEditorAppBar _appBar(BuildContext context) {
-    return NoteEditorAppBar(
+  NoteEditorAppBarWidget _appBar(BuildContext context) {
+    return NoteEditorAppBarWidget(
       onViewButtonClick: () {
         context.read<EditorBloc>().add(DisableEditor());
       },

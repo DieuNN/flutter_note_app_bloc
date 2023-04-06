@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: HomeAppBar(
+      appBar: HomeAppBarWidget(
         onSearchClick: () => navigateToSearch(context),
         onInfoClick: () => openInfoDialog(context),
       ),
@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: const [
         Center(
-          child: EmptyNotes(),
+          child: EmptyNotesWidget(),
         ),
       ],
     );
@@ -78,7 +78,7 @@ class HomeScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 16),
       itemBuilder: (BuildContext context, int index) {
         return notes
-            .map((item) => NoteItem(
+            .map((item) => NoteItemWidget(
                   title: item.title,
                   hexColor: item.color,
                   id: item.id ?? 0,

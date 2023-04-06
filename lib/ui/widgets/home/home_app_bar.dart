@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
 
-class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+class HomeAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onSearchClick;
   final VoidCallback onInfoClick;
 
-  const HomeAppBar(
+  const HomeAppBarWidget(
       {Key? key, required this.onSearchClick, required this.onInfoClick})
       : super(key: key);
 

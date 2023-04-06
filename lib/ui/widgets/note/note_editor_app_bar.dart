@@ -6,12 +6,12 @@ import 'package:note_app/blocs/editor/editor_bloc.dart';
 import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
 
-class NoteEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
+class NoteEditorAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onViewButtonClick;
   final VoidCallback? onSaveButtonClick;
   final VoidCallback? onEditButtonClick;
 
-  const NoteEditorAppBar(
+  const NoteEditorAppBarWidget(
       {Key? key,
       this.onViewButtonClick,
       this.onSaveButtonClick,

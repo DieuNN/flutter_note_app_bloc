@@ -8,12 +8,12 @@ import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-class NoteItem extends StatelessWidget {
+class NoteItemWidget extends StatelessWidget {
   final String title;
   final String hexColor;
   final int id;
 
-  const NoteItem(
+  const NoteItemWidget(
       {Key? key, required this.title, required this.hexColor, required this.id})
       : super(key: key);
 

@@ -87,7 +87,6 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   Future<bool> _showConfirmDiscard(context) {
-    Future<bool>? result;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -101,7 +100,7 @@ class _NoteEditorState extends State<NoteEditor> {
             onPressed: () {
               _saveNote();
               BlocProvider.of<AppBloc>(context).add(AppLoadNotesEvent());
-              Navigator.pop(context);
+              _backToHomeScreen(context);
             },
             child: const Text(
               "Yes",
@@ -114,7 +113,7 @@ class _NoteEditorState extends State<NoteEditor> {
           TextButton(
             onPressed: () {
               _hideKeyboard();
-              Navigator.popUntil(context, ModalRoute.withName("/"));
+              _backToHomeScreen(context);
             },
             child: const Text(
               "Discard",
@@ -194,10 +193,13 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   NoteEvent _addNote() {
-    String randomHexColor = Color((math.Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0).toHex();
+    String randomHexColor =
+        Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+            .withOpacity(1.0)
+            .toHex();
     return NoteSaveEvent(
       onSuccess: () {
-        Navigator.pop(context);
+        _backToHomeScreen(context);
       }(),
       note: Note(
         id: null,
@@ -238,6 +240,10 @@ class _NoteEditorState extends State<NoteEditor> {
         : () {
             Fluttertoast.showToast(msg: "Title cannot be empty");
           }();
+  }
+
+  void _backToHomeScreen(context) {
+    Navigator.popUntil(context, ModalRoute.withName("/"));
   }
 
   void _resetAndUpdateNoteState() {

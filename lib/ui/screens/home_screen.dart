@@ -1,7 +1,3 @@
-import 'dart:developer';
-import 'dart:math';
-
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/app/app_bloc.dart';
@@ -9,11 +5,11 @@ import 'package:note_app/blocs/note/note_bloc.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/params/note_params.dart';
-import 'package:note_app/repository/note_sqlite_repository.dart';
 import 'package:note_app/ui/widgets/home/empty_notes.dart';
 import 'package:note_app/ui/widgets/home/home_app_bar.dart';
 import 'package:note_app/ui/widgets/note/note_item.dart';
-import 'package:path/path.dart';
+
+final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key, required this.notes}) : super(key: key);
@@ -22,6 +18,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       backgroundColor: Colors.black,
       appBar: HomeAppBarWidget(
         onSearchClick: () => navigateToSearch(context),
@@ -79,9 +76,7 @@ class HomeScreen extends StatelessWidget {
       itemBuilder: (BuildContext context, int index) {
         return notes
             .map((item) => NoteItemWidget(
-                  title: item.title,
-                  hexColor: item.color,
-                  id: item.id ?? 0,
+                  note: item,
                   key: ValueKey(item.id),
                 ))
             .toList()[index];

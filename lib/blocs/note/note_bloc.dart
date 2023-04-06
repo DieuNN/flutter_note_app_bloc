@@ -30,9 +30,11 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
         emit(NoteLoadedState(note: note!));
       },
     );
-    on<NoteAddNewEvent>((event, emit) {
-      emit(NewNoteState());
-    },);
+    on<NoteAddNewEvent>(
+      (event, emit) {
+        emit(NewNoteState());
+      },
+    );
     on<NoteSaveEvent>(
       (event, emit) async {
         emit(NoteSavingState());
@@ -64,5 +66,12 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
       }
       emit(NoteUpdatedState(onFailure: event.onFailure));
     });
+    on<NoteSearchEvent>(
+      (event, emit) async {
+        emit(NoteSearchingState(keyword: event.keyword));
+        var notes = await noteSqlRepository.searchNote(keyword: event.keyword);
+        emit(NoteSearchedState(notes: notes));
+      },
+    );
   }
 }

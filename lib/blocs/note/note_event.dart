@@ -57,3 +57,13 @@ class NoteUpdateEvent extends NoteEvent {
   @override
   List<Object?> get props => [id, onSuccess, onFailure];
 }
+
+class NoteSearchEvent extends NoteEvent {
+  final String keyword;
+
+  const NoteSearchEvent({required this.keyword});
+
+  @override
+  List<Object?> get props => [keyword];
+
+}

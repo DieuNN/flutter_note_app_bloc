@@ -18,6 +18,7 @@ class NoteLoadingState extends NoteState {
   final int id;
 
   const NoteLoadingState({required this.id});
+
   @override
   List<Object?> get props => [];
 }
@@ -26,19 +27,17 @@ class NoteLoadedState extends NoteState {
   final Note note;
 
   const NoteLoadedState({required this.note});
+
   @override
   List<Object?> get props => [];
-
 }
 
 class NoteSavingState extends NoteState {
   @override
   List<Object?> get props => [];
-
 }
 
 class NoteSavedState extends NoteState {
-
   final VoidCallback? onSuccess;
   final VoidCallback? onFailure;
 
@@ -46,19 +45,16 @@ class NoteSavedState extends NoteState {
 
   @override
   List<Object?> get props => [];
-
 }
 
 class NoteEditingState extends NoteState {
   @override
   List<Object?> get props => throw UnimplementedError();
-
 }
 
 class NoteDeletingState extends NoteState {
   @override
   List<Object?> get props => [];
-
 }
 
 class NoteDeletedState extends NoteState {
@@ -66,14 +62,14 @@ class NoteDeletedState extends NoteState {
   final VoidCallback? onFailure;
 
   const NoteDeletedState({this.onSuccess, this.onFailure});
+
   @override
   List<Object?> get props => [onSuccess, onFailure];
-
 }
 
 class NoteUpdatingState extends NoteState {
   @override
-  List<Object?> get props =>[];
+  List<Object?> get props => [];
 }
 
 class NoteUpdatedState extends NoteState {
@@ -81,6 +77,25 @@ class NoteUpdatedState extends NoteState {
   final VoidCallback? onFailure;
 
   const NoteUpdatedState({this.onSuccess, this.onFailure});
+
   @override
   List<Object?> get props => [onSuccess, onFailure];
+}
+
+class NoteSearchingState extends NoteState {
+  final String keyword;
+
+  const NoteSearchingState({required this.keyword});
+
+  @override
+  List<Object?> get props => [keyword];
+}
+
+class NoteSearchedState extends NoteState {
+  final List<Note> notes;
+
+  const NoteSearchedState({required this.notes});
+
+  @override
+  List<Object?> get props => [notes];
 }

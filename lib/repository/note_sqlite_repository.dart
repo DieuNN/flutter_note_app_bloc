@@ -14,6 +14,8 @@ abstract class NoteSqliteRepository {
   Future<bool> updateNote({required Note note, required num id});
 
   Future<bool> deleteNote({required num id});
+
+  Future<List<Note>> searchNote({required String keyword});
 }
 
 class NoteSqliteRepositoryImpl implements NoteSqliteRepository {
@@ -102,5 +104,27 @@ class NoteSqliteRepositoryImpl implements NoteSqliteRepository {
       log("Updated at $id, value: $note");
     }
     return result > 0;
+  }
+
+  @override
+  Future<List<Note>> searchNote({required String keyword}) async {
+    var database = await _getDatabase();
+    List<Map<String, Object?>> notes =
+    (await database.rawQuery("select id, title, content, color from note where title like '%$keyword%'"));
+
+    List<Note> result = [];
+
+    for (var note in notes) {
+      String title = note["title"].toString();
+      int id = int.parse(note["id"].toString());
+      String content = note["content"].toString();
+      String color = note["color"].toString();
+
+      result.add(Note(id: id, title: title, content: content, color: color));
+    }
+    log(result.length.toString());
+
+    return result;
+
   }
 }

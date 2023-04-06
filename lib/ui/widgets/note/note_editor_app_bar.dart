@@ -29,11 +29,11 @@ class NoteEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
             iconTheme: const IconThemeData(color: Colors.white),
             elevation: 0,
             actions: [
-              _actionButton(onViewButtonClick!, Icons.remove_red_eye),
+              _buildActionButton(onViewButtonClick!, Icons.remove_red_eye),
               const SizedBox(
                 width: 20,
               ),
-              _actionButton(onSaveButtonClick!, Icons.save),
+              _buildActionButton(onSaveButtonClick!, Icons.save),
               const SizedBox(
                 width: 25,
               ),
@@ -45,7 +45,7 @@ class NoteEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
           iconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
           actions: [
-            _actionButton(onEditButtonClick!, Icons.edit),
+            _buildActionButton(onEditButtonClick!, Icons.edit),
             const SizedBox(
               width: 20,
             ),
@@ -58,7 +58,7 @@ class NoteEditorAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  Widget _actionButton(VoidCallback onItemClick, IconData icon) {
+  Widget _buildActionButton(VoidCallback onItemClick, IconData icon) {
     return Wrap(
       children: [
         DecoratedBox(

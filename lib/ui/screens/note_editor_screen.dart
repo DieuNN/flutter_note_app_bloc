@@ -78,9 +78,9 @@ class _NoteEditorState extends State<NoteEditor> {
             );
           }
           if (state is NewNoteState) {
-            _editorScreen();
+            _buildEditorScreen();
           }
-          return _editorScreen();
+          return _buildEditorScreen();
         },
       ),
     );
@@ -99,9 +99,9 @@ class _NoteEditorState extends State<NoteEditor> {
         actions: [
           TextButton(
             onPressed: () {
-              _saveNote();
+              _onSaveNote();
               BlocProvider.of<AppBloc>(context).add(AppLoadNotesEvent());
-              Navigator.pop(context);
+              Navigator.popUntil(context, ModalRoute.withName("/"));
             },
             child: const Text(
               "Yes",
@@ -142,10 +142,10 @@ class _NoteEditorState extends State<NoteEditor> {
     return Future.value(true);
   }
 
-  Widget _editorScreen() {
+  Widget _buildEditorScreen() {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: _appBar(context),
+      appBar: _buildAppBar(context),
       body: BlocBuilder<NoteBloc, NoteState>(
         builder: (context, state) {
           if (state is NoteLoadedState) {
@@ -153,11 +153,12 @@ class _NoteEditorState extends State<NoteEditor> {
             return SafeArea(
               child: Column(
                 children: [
-                  _titleInput(_titleEditController..text = state.note.title),
+                  _buildTitleInput(
+                      _titleEditController..text = state.note.title),
                   const SizedBox(
                     height: 8,
                   ),
-                  _contentEditor(_document),
+                  _buildContentEditor(_document),
                   _editorToolBar(),
                 ],
               ),
@@ -168,11 +169,11 @@ class _NoteEditorState extends State<NoteEditor> {
             return SafeArea(
               child: Column(
                 children: [
-                  _titleInput(_titleEditController),
+                  _buildTitleInput(_titleEditController),
                   const SizedBox(
                     height: 8,
                   ),
-                  _contentEditor(_document),
+                  _buildContentEditor(_document),
                   _editorToolBar(),
                 ],
               ),
@@ -193,8 +194,11 @@ class _NoteEditorState extends State<NoteEditor> {
     FocusScope.of(context).requestFocus(FocusNode());
   }
 
-  NoteEvent _addNote() {
-    String randomHexColor = Color((math.Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0).toHex();
+  NoteEvent _onAddNote() {
+    String randomHexColor =
+        Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+            .withOpacity(1.0)
+            .toHex();
     return NoteSaveEvent(
       onSuccess: () {
         Navigator.pop(context);
@@ -208,7 +212,11 @@ class _NoteEditorState extends State<NoteEditor> {
     );
   }
 
-  NoteEvent _updateNote(int id) {
+  NoteEvent _onUpdateNote(int id) {
+    String randomHexColor =
+        Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+            .withOpacity(1.0)
+            .toHex();
     return NoteUpdateEvent(
       id: id,
       onSuccess: () {
@@ -218,19 +226,19 @@ class _NoteEditorState extends State<NoteEditor> {
         id: null,
         title: _titleEditController.text,
         content: jsonEncode(_quillController.document.toDelta().toJson()),
-        color: "#FFFFFF",
+        color: randomHexColor,
       ),
     );
   }
 
-  void _saveNote() {
+  void _onSaveNote() {
     _titleEditController.text.isNotEmpty
         ? () {
             log(jsonEncode(_quillController.document.toDelta().toJson()));
             context.read<NoteBloc>().add(
                   _noteParams!.isNewNote!
-                      ? _addNote()
-                      : _updateNote(
+                      ? _onAddNote()
+                      : _onUpdateNote(
                           _noteParams!.id!,
                         ),
                 );
@@ -245,13 +253,13 @@ class _NoteEditorState extends State<NoteEditor> {
     context.read<NoteBloc>().add(NoteInitEvent());
   }
 
-  NoteEditorAppBar _appBar(BuildContext context) {
+  NoteEditorAppBar _buildAppBar(BuildContext context) {
     return NoteEditorAppBar(
       onViewButtonClick: () {
         context.read<EditorBloc>().add(DisableEditor());
       },
       onSaveButtonClick: () {
-        _saveNote();
+        _onSaveNote();
         _resetAndUpdateNoteState();
       },
       onEditButtonClick: () {
@@ -260,7 +268,7 @@ class _NoteEditorState extends State<NoteEditor> {
     );
   }
 
-  _contentEditor(quill.Document document) {
+  _buildContentEditor(quill.Document document) {
     return BlocBuilder<EditorBloc, EditorState>(
       builder: (context, state) {
         var isEditable = state is EditorActiveState;
@@ -294,7 +302,7 @@ class _NoteEditorState extends State<NoteEditor> {
     );
   }
 
-  _titleInput(TextEditingController controller) {
+  _buildTitleInput(TextEditingController controller) {
     return BlocBuilder<EditorBloc, EditorState>(
       builder: (context, state) {
         bool isEnabled = (state is EditorActiveState);

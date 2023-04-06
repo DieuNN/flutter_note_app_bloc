@@ -24,29 +24,29 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: HomeAppBar(
-        onSearchClick: () => navigateToSearch(context),
-        onInfoClick: () => openInfoDialog(context),
+        onSearchClick: () => _navigateToSearchScreen(context),
+        onInfoClick: () => _openInfoDialog(context),
       ),
       body: SafeArea(
         child: BlocBuilder<AppBloc, AppState>(
           builder: (context, state) {
             if (state is AppLoadingState) {
-              return _emptyNotes();
+              return _buildEmptyNotesNotify();
             }
             if (state is AppReadyState) {
               return state.notes.isEmpty
-                  ? _emptyNotes()
-                  : _noteList(state.notes);
+                  ? _buildEmptyNotesNotify()
+                  : _buildNoteList(state.notes);
             }
-            return _emptyNotes();
+            return _buildEmptyNotesNotify();
           },
         ),
       ),
-      floatingActionButton: _addNoteButton(context),
+      floatingActionButton: _buildAddNoteButton(context),
     );
   }
 
-  _addNoteButton(BuildContext context) {
+  _buildAddNoteButton(BuildContext context) {
     return FloatingActionButton(
       onPressed: () {
         _openNoteEditor(context);
@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
         .pushNamed("/detail", arguments: NoteParams(isNewNote: true));
   }
 
-  _emptyNotes() {
+  _buildEmptyNotesNotify() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -73,7 +73,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  _noteList(List<Note> notes) {
+  _buildNoteList(List<Note> notes) {
     return ListView.separated(
       padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 16),
       itemBuilder: (BuildContext context, int index) {
@@ -95,11 +95,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void navigateToSearch(BuildContext context) {
+  void _navigateToSearchScreen(BuildContext context) {
     Navigator.of(context).pushNamed("/search");
   }
 
-  void openInfoDialog(BuildContext context) {
+  void _openInfoDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

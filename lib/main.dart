@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
               routes: {
                 "/": (context) =>
                     HomeScreen(notes: (state as AppReadyState).notes),
-                "/search": (context) => const SearchScreen(),
+                "/search": (context) =>  SearchScreen(),
                 "/detail": (context) => const NoteEditor(),
               },
               initialRoute: "/",

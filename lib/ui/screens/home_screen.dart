@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/app/app_bloc.dart';
@@ -11,10 +14,15 @@ import 'package:note_app/ui/widgets/note/note_item.dart';
 
 final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key, required this.notes}) : super(key: key);
   final List<Note> notes;
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,17 +33,33 @@ class HomeScreen extends StatelessWidget {
         onInfoClick: () => openInfoDialog(context),
       ),
       body: SafeArea(
-        child: BlocBuilder<AppBloc, AppState>(
-          builder: (context, state) {
-            if (state is AppLoadingState) {
-              return _emptyNotes();
+        child: BlocConsumer<AppBloc, AppState>(
+          buildWhen: (previous, current) {
+            if (previous is AppRefreshingState &&
+                current is AppLoadSuccessState) {
+              log("Refreshing list");
+              return true;
             }
-            if (state is AppReadyState) {
+            if (current is AppRefreshingState) {
+              return true;
+            }
+            return false;
+          },
+          listener: (context, state) {
+            if (state is AppLoadSuccessState) {}
+          },
+          builder: (context, state) {
+            if (state is AppLoadSuccessState) {
               return state.notes.isEmpty
                   ? _emptyNotes()
-                  : _noteList(state.notes);
+                  : RefreshIndicator(
+                      child: _buildNoteList(state.notes),
+                      onRefresh: () async {
+                        context.read<AppBloc>().add(AppRefreshEvent());
+                      },
+                    );
             }
-            return _emptyNotes();
+            return _buildNoteList([]);
           },
         ),
       ),
@@ -52,10 +76,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  _openNoteEditor(context) {
-    BlocProvider.of<NoteBloc>(context).add(NoteAddNewEvent());
+  _openNoteEditor(BuildContext context) {
     Navigator.of(context)
-        .pushNamed("/detail", arguments: NoteParams(isNewNote: true));
+        .pushNamed("/detail", arguments: NoteParams(isNewNote: true))
+        .then(
+      (value) {
+        context.read<AppBloc>().add(AppRefreshEvent());
+        context.read<NoteBloc>().add(NoteInitEvent());
+      },
+    );
   }
 
   _emptyNotes() {
@@ -70,7 +99,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  _noteList(List<Note> notes) {
+  _buildNoteList(List<Note> notes) {
     return ListView.separated(
       padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 16),
       itemBuilder: (BuildContext context, int index) {
@@ -78,6 +107,7 @@ class HomeScreen extends StatelessWidget {
             .map((item) => NoteItemWidget(
                   note: item,
                   key: ValueKey(item.id),
+                  onDelete: () => _onRemoveNoteItem(item),
                 ))
             .toList()[index];
       },
@@ -88,6 +118,9 @@ class HomeScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _onRemoveNoteItem(Note note) {
   }
 
   void navigateToSearch(BuildContext context) {

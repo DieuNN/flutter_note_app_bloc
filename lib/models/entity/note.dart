@@ -24,4 +24,8 @@ class Note extends Equatable {
   bool operator ==(Object other) {
     return other is Note && id == other.id;
   }
+
+  Map<String, dynamic> toJson() {
+    return {"id": id, "title": title, "content": content, "color": color};
+  }
 }

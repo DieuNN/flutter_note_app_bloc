@@ -18,44 +18,32 @@ class NoteLoadEvent extends NoteEvent {
   List<Object?> get props => [];
 }
 
-class NoteSaveEvent extends NoteEvent {
+class NoteAddEvent extends NoteEvent {
   final Note note;
-  final VoidCallback? onSuccess;
-  final VoidCallback? onFailure;
 
-  const NoteSaveEvent({this.onSuccess, this.onFailure, required this.note});
+  const NoteAddEvent({required this.note});
 
-  @override
-  List<Object?> get props => [note, onSuccess, onFailure];
-}
-
-class NoteAddNewEvent extends NoteEvent {
   @override
   List<Object?> get props => [];
-
 }
 
 class NoteDeleteEvent extends NoteEvent {
   final int id;
-  final VoidCallback? onSuccess;
-  final VoidCallback? onFailure;
 
-  const NoteDeleteEvent({this.onSuccess, this.onFailure, required this.id});
+  const NoteDeleteEvent({required this.id});
 
   @override
   List<Object?> get props => [id];
 }
 
-class NoteUpdateEvent extends NoteEvent {
+class NoteEditEvent extends NoteEvent {
   final int id;
   final Note note;
-  final VoidCallback? onSuccess;
-  final VoidCallback? onFailure;
 
-  const NoteUpdateEvent({required this.note, required this.id, this.onSuccess, this.onFailure});
+  const NoteEditEvent({required this.note, required this.id});
 
   @override
-  List<Object?> get props => [id, onSuccess, onFailure];
+  List<Object?> get props => [id, note];
 }
 
 class NoteSearchEvent extends NoteEvent {
@@ -65,5 +53,4 @@ class NoteSearchEvent extends NoteEvent {
 
   @override
   List<Object?> get props => [keyword];
-
 }

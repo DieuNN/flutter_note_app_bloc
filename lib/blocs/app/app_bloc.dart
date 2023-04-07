@@ -1,9 +1,15 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
-import 'package:note_app/repository/note_sqlite_repository.dart';
+import 'package:note_app/main.dart';
+import 'package:note_app/models/enums/database_type.dart';
+import 'package:note_app/repository/implements/note_shared_prefs_impl.dart';
+import 'package:note_app/repository/implements/note_sqlite_impl.dart';
+import 'package:note_app/repository/note_repository.dart';
 
 import '../../models/entity/note.dart';
 
@@ -12,15 +18,46 @@ part 'app_event.dart';
 part 'app_state.dart';
 
 class AppBloc extends Bloc<AppEvent, AppState> {
-  final NoteSqliteRepositoryImpl database = NoteSqliteRepositoryImpl();
-
   AppBloc() : super(AppInitialState()) {
-    on<AppEvent>((event, emit) {});
+    final NoteRepository database;
+    switch (databaseType) {
+      case DatabaseType.sqlite:
+        database = NoteSqliteRepositoryImpl();
+        break;
+      case DatabaseType.sharedPreferences:
+        database = NoteSharedPreferencesRepositoryImpl();
+        break;
+    }
+    on<AppEvent>((event, emit) async {});
+
+    on<AppInitialEvent>(
+      (event, emit) async {
+        log("App Init state");
+        emit(AppInitialState());
+        emit(AppLoadingState());
+        log("Done init state");
+      },
+      transformer: sequential(),
+    );
+
     on<AppLoadNotesEvent>(
       (event, emit) async {
-        List<Note>? notes = await database.getNotes();
-        emit(AppReadyState(notes: notes ?? []));
+        emit(AppLoadingState());
+        List<Note> notes = await database.getNotes();
+        emit(AppLoadSuccessState(notes: notes));
       },
+      transformer: sequential(),
+    );
+
+    on<AppRefreshEvent>(
+      (event, emit) async {
+        log("Refreshing ...");
+        emit(AppRefreshingState());
+        List<Note> notes = await database.getNotes();
+        emit(AppLoadSuccessState(notes: notes));
+        log("Refresh completed!");
+      },
+      transformer: sequential(),
     );
   }
 }

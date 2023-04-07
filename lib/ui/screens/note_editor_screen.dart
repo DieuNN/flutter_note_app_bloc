@@ -61,13 +61,14 @@ class _NoteEditorState extends State<NoteEditor> {
     return WillPopScope(
       onWillPop: () async {
         if (_titleEditController.text.isEmpty) {
-          return Future.value(true);
+          return false;
         }
         Future<bool> shouldDiscard = _showConfirmDiscard(context);
         return shouldDiscard;
       },
       child: BlocBuilder<NoteBloc, NoteState>(
         builder: (context, state) {
+          log("State of editor is ${state.runtimeType}");
           if (state is NoteLoadingState) {
             log("State is $state");
             return const Center(
@@ -77,8 +78,16 @@ class _NoteEditorState extends State<NoteEditor> {
               ),
             );
           }
-          if (state is NewNoteState) {
-            _editorScreen();
+          if (state is NoteLoadErrorState) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: const [
+                Center(
+                  child: Text("Error when loading note"),
+                )
+              ],
+            );
           }
           return _editorScreen();
         },
@@ -99,7 +108,6 @@ class _NoteEditorState extends State<NoteEditor> {
           TextButton(
             onPressed: () {
               _saveNote();
-              BlocProvider.of<AppBloc>(context).add(AppLoadNotesEvent());
               _backToHomeScreen(context);
             },
             child: const Text(
@@ -125,7 +133,7 @@ class _NoteEditorState extends State<NoteEditor> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.popUntil(context, ModalRoute.withName("/"));
             },
             child: const Text(
               "No",
@@ -147,7 +155,7 @@ class _NoteEditorState extends State<NoteEditor> {
       appBar: _appBar(context),
       body: BlocBuilder<NoteBloc, NoteState>(
         builder: (context, state) {
-          if (state is NoteLoadedState) {
+          if (state is NoteLoadSuccessState) {
             _document = quill.Document.fromJson(jsonDecode(state.note.content));
             return SafeArea(
               child: Column(
@@ -167,7 +175,7 @@ class _NoteEditorState extends State<NoteEditor> {
             return SafeArea(
               child: Column(
                 children: [
-                  _titleInput(_titleEditController),
+                  _titleInput(_titleEditController..text = ""),
                   const SizedBox(
                     height: 8,
                   ),
@@ -197,10 +205,7 @@ class _NoteEditorState extends State<NoteEditor> {
         Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
             .withOpacity(1.0)
             .toHex();
-    return NoteSaveEvent(
-      onSuccess: () {
-        _backToHomeScreen(context);
-      }(),
+    return NoteAddEvent(
       note: Note(
         id: null,
         title: _titleEditController.text,
@@ -211,16 +216,16 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   NoteEvent _updateNote(int id) {
-    return NoteUpdateEvent(
+    log("ALO");
+    return NoteEditEvent(
       id: id,
-      onSuccess: () {
-        Navigator.pop(context);
-      }(),
       note: Note(
         id: null,
         title: _titleEditController.text,
         content: jsonEncode(_quillController.document.toDelta().toJson()),
-        color: "#FFFFFF",
+        color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+            .withOpacity(1.0)
+            .toHex(),
       ),
     );
   }
@@ -246,11 +251,6 @@ class _NoteEditorState extends State<NoteEditor> {
     Navigator.popUntil(context, ModalRoute.withName("/"));
   }
 
-  void _resetAndUpdateNoteState() {
-    context.read<AppBloc>().add(AppLoadNotesEvent());
-    context.read<NoteBloc>().add(NoteInitEvent());
-  }
-
   NoteEditorAppBarWidget _appBar(BuildContext context) {
     return NoteEditorAppBarWidget(
       onViewButtonClick: () {
@@ -258,7 +258,7 @@ class _NoteEditorState extends State<NoteEditor> {
       },
       onSaveButtonClick: () {
         _saveNote();
-        _resetAndUpdateNoteState();
+        _backToHomeScreen(context);
       },
       onEditButtonClick: () {
         context.read<EditorBloc>().add(ActiveEditor());

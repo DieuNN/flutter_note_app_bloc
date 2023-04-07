@@ -1,24 +1,10 @@
-import 'dart:developer';
-
 import 'package:note_app/models/entity/note.dart';
+import 'package:note_app/repository/note_repository.dart';
 import 'package:sqflite/sqflite.dart' as sql;
+import 'dart:developer';
 import 'package:path/path.dart' as path;
 
-abstract class NoteSqliteRepository {
-  Future<List<Note>?> getNotes();
-
-  Future<Note?> getNote({required num noteId});
-
-  Future<bool> addNote({required Note note});
-
-  Future<bool> updateNote({required Note note, required num id});
-
-  Future<bool> deleteNote({required num id});
-
-  Future<List<Note>> searchNote({required String keyword});
-}
-
-class NoteSqliteRepositoryImpl implements NoteSqliteRepository {
+class NoteSqliteRepositoryImpl implements NoteRepository {
   Future<void> initDatabase() async {
     _createDatabase(await _getDatabase());
   }
@@ -61,47 +47,59 @@ class NoteSqliteRepositoryImpl implements NoteSqliteRepository {
 
   @override
   Future<Note?> getNote({required num noteId}) async {
-    var database = await _getDatabase();
-    Map<String, Object?> note = (await database.rawQuery(
-            "select id, title, content, color from note where id = ?",
-            [noteId]))
-        .first;
-    String title = note["title"].toString();
-    int id = int.parse(note["id"].toString());
-    String content = note["content"].toString();
-    String color = note["color"].toString();
-    return Note(id: id, title: title, content: content, color: color);
-  }
+    try {
+      var database = await _getDatabase();
+      Map<String, Object?> note = (await database.rawQuery(
+          "select id, title, content, color from note where id = ?",
+          [noteId]))
+          .first;
 
-  @override
-  Future<List<Note>?> getNotes() async {
-    log("Getting notes ...");
-    var database = await _getDatabase();
-    List<Map<String, Object?>> notes =
-        (await database.rawQuery("select id, title, content, color from note"));
-    log("Notes: ${notes.length}");
-    List<Note> result = [];
-
-    for (var note in notes) {
       String title = note["title"].toString();
       int id = int.parse(note["id"].toString());
       String content = note["content"].toString();
       String color = note["color"].toString();
-
-      result.add(Note(id: id, title: title, content: content, color: color));
+      log("${note}");
+      return Note(id: id, title: title, content: content, color: color);
+    } catch (e) {
+      log(e.toString());
+      return null;
     }
-
-    return result;
   }
 
   @override
-  Future<bool> updateNote({required Note note, required num id}) async {
+  Future<List<Note>> getNotes() async {
+    try {
+      log("Getting notes ...");
+      var database = await _getDatabase();
+      List<Map<String, Object?>> notes = (await database
+          .rawQuery("select id, title, content, color from note"));
+      log("Notes: ${notes.length}");
+      List<Note> result = [];
+
+      for (var note in notes) {
+        String title = note["title"].toString();
+        int id = int.parse(note["id"].toString());
+        String content = note["content"].toString();
+        String color = note["color"].toString();
+
+        result.add(Note(id: id, title: title, content: content, color: color));
+      }
+
+      return result;
+    } catch (e) {
+      log(e.toString());
+      return [];
+    }
+  }
+
+  @override
+  Future<bool> updateNote({required Note newNote, required num id}) async {
     var database = await _getDatabase();
     int result = await database.rawUpdate(
         "update note set title = ?, content = ?, color = ? where id = ?",
-        [note.title, note.content, note.color, id]);
+        [newNote.title, newNote.content, newNote.color, id]);
     if (result > 0) {
-      log("Updated at $id, value: $note");
+      log("Updated at $id, value: $newNote");
     }
     return result > 0;
   }
@@ -109,8 +107,8 @@ class NoteSqliteRepositoryImpl implements NoteSqliteRepository {
   @override
   Future<List<Note>> searchNote({required String keyword}) async {
     var database = await _getDatabase();
-    List<Map<String, Object?>> notes =
-    (await database.rawQuery("select id, title, content, color from note where title like '%$keyword%'"));
+    List<Map<String, Object?>> notes = (await database.rawQuery(
+        "select id, title, content, color from note where title like '%$keyword%'"));
 
     List<Note> result = [];
 
@@ -125,6 +123,5 @@ class NoteSqliteRepositoryImpl implements NoteSqliteRepository {
     log(result.length.toString());
 
     return result;
-
   }
 }

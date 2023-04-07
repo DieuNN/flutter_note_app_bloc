@@ -1,0 +1,4 @@
+enum DatabaseType {
+  sqlite,
+  sharedPreferences
+}

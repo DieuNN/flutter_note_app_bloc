@@ -1,13 +1,12 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:note_app/blocs/app/app_bloc.dart';
 import 'package:note_app/blocs/editor/editor_bloc.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
-import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/enums/database_type.dart';
 import 'package:note_app/ui/screens/search_screen.dart';
 import 'package:note_app/ui/screens/note_editor_screen.dart';
@@ -20,7 +19,12 @@ late DatabaseType databaseType;
 void main() async {
   binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
-  databaseType = DatabaseType.sharedPreferences;
+  databaseType = DatabaseType.hive;
+
+  if (databaseType == DatabaseType.hive) {
+    await Hive.initFlutter();
+  }
+
   runApp(const MyApp());
 }
 
@@ -47,7 +51,9 @@ class MyApp extends StatelessWidget {
           FlutterNativeSplash.remove();
           log("Current app state is: ${state.runtimeType}");
           if (state is AppInitialState || state is AppLoadingState) {
-            context.read<AppBloc>().add(AppLoadNotesEvent());
+            if (state is AppInitialState) {
+              context.read<AppBloc>().add(AppLoadNotesEvent());
+            }
             return const Center(
               child: CircularProgressIndicator(
                 color: Colors.black,
@@ -61,7 +67,7 @@ class MyApp extends StatelessWidget {
             themeMode: ThemeMode.dark,
             routes: {
               "/": (context) =>
-                   HomeScreen(notes: (state as AppLoadSuccessState).notes),
+                  HomeScreen(notes: (state as AppLoadSuccessState).notes),
               "/search": (context) => SearchScreen(),
               "/detail": (context) => const NoteEditor(),
             },

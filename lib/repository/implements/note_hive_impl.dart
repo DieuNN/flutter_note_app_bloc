@@ -1,26 +1,24 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/repository/note_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart';
 
-class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
-  // Using "notes" as key and json encoded saved notes to store as key and value
-
-  Future<SharedPreferences> getDatabase() async {
-    log("Using shared Preferences!");
-    var database = await SharedPreferences.getInstance();
-    // init note id and note list
-    database.getInt("note_number") ?? database.setInt("note_number", 0);
-    database.get("notes") ?? database.setString("notes", jsonEncode([]));
+class NoteHiveRepositoryImpl extends NoteRepository {
+  Future<LazyBox> _getDatabase() async {
+    var database = await Hive.openLazyBox("note_db");
+    var noteNumber = (await database.get("note_number") as int?) ?? 0;
+    await database.put("note_number", noteNumber);
+    ((await database.get("notes")) as String?) ??
+        database.put("notes", jsonEncode([]));
     return database;
   }
 
-  Future<List<Note>> _getSavedNote(SharedPreferences database) async {
-    List<dynamic> notes =
-        await jsonDecode(database.getString("notes") ?? jsonEncode([]));
-
+  Future<List<Note>> _getSavedNote(LazyBox database) async {
+    List<dynamic> notes = await jsonDecode(
+        (await database.get("notes") as String?) ?? jsonEncode([]));
     List<Note> result = [];
     for (var note in notes) {
       result.add(Note(
@@ -36,23 +34,19 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
   Future<bool> addNote({required Note note}) async {
     try {
       log("start adding note");
-      var database = await getDatabase();
-      var id = database.getInt("note_number");
+      var database = await _getDatabase();
+      var id = await (database.get("note_number")) as int;
+      log(id.toString());
       var notes = await _getSavedNote(database);
       log(jsonEncode(notes));
-      notes.add(
-        Note(
-            id: id,
-            title: note.title,
-            content: note.content,
-            color: note.color),
-      );
+      notes.add(Note(
+          id: id, title: note.title, content: note.content, color: note.color));
 
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
-      log("Note added: ${note.id}, ${note.title}, ${note.content}, ${note.color}");
-      id = id! + 1;
-      database.setInt("note_number", id);
+      await database.put("notes", encodedNotes);
+      log("Note added");
+      id = id + 1;
+      await database.put("note_number", id);
       return true;
     } catch (e) {
       log(e.toString());
@@ -65,11 +59,11 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
     try {
       var start = DateTime.now().millisecondsSinceEpoch;
       log("Deleting note!");
-      var database = await getDatabase();
+      var database = await _getDatabase();
       var notes = await _getSavedNote(database);
       notes.removeWhere((element) => element.id == id);
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
+      database.put("notes", encodedNotes);
       var end = DateTime.now().millisecondsSinceEpoch;
       log("Note deleted, in ${end - start}ms");
       return true;
@@ -81,7 +75,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
   @override
   Future<Note?> getNote({required num noteId}) async {
     try {
-      var database = await getDatabase();
+      var database = await _getDatabase();
       var notes = await _getSavedNote(database);
       return notes.firstWhere((element) => element.id == noteId);
     } catch (e) {
@@ -89,11 +83,16 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
     }
   }
 
+  int count = 0;
+
   @override
   Future<List<Note>> getNotes() async {
+    count++;
+    log("called $count time");
     try {
       var start = DateTime.now().millisecondsSinceEpoch;
-      var database = await getDatabase();
+      var database = await _getDatabase();
+      log("getting notes");
       log("getting notes");
       var notes = await _getSavedNote(database);
       log("get ${notes.length}");
@@ -110,7 +109,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
   @override
   Future<List<Note>> searchNote({required String keyword}) async {
     try {
-      var database = await getDatabase();
+      var database = await _getDatabase();
       var notes = await _getSavedNote(database);
       List<Note> result = [];
       for (var note in notes) {
@@ -125,9 +124,9 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
   }
 
   @override
-  Future<bool> updateNote({required var newNote, required num id}) async {
+  Future<bool> updateNote({required Note newNote, required num id}) async {
     try {
-      var database = await getDatabase();
+      var database = await _getDatabase();
       var notes = await _getSavedNote(database);
 
       // First, find which note should be update, then update with new note
@@ -139,7 +138,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
       }
 
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
+      database.put("notes", encodedNotes);
       return true;
     } catch (e) {
       return false;

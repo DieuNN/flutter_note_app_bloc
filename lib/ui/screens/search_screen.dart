@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/common/extensions.dart';
@@ -36,6 +38,7 @@ class SearchScreen extends StatelessWidget {
     return Expanded(
       child: BlocBuilder<NoteBloc, NoteState>(
         builder: (context, state) {
+          log("Searching state is ${state.runtimeType}");
           if (state is NoteSearchingState) {
             return const Expanded(
               child: Center(

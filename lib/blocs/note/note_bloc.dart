@@ -3,10 +3,10 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import 'package:note_app/main.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/enums/database_type.dart';
+import 'package:note_app/repository/implements/note_hive_impl.dart';
 import 'package:note_app/repository/implements/note_shared_prefs_impl.dart';
 import 'package:note_app/repository/note_repository.dart';
 
@@ -27,16 +27,17 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
       case DatabaseType.sharedPreferences:
         database = NoteSharedPreferencesRepositoryImpl();
         break;
+      case DatabaseType.hive:
+        database = NoteHiveRepositoryImpl();
+        break;
     }
     on<NoteEvent>((event, emit) {});
-    on<NoteInitEvent>(
-      (event, emit) {
-        emit(NoteInitialState());
-      },
-      transformer: sequential(),
-    );
+    on<NoteInitEvent>((event, emit) {
+      emit(NoteInitialState());
+    }, transformer: sequential());
     on<NoteLoadEvent>(
       (event, emit) async {
+        emit(NoteInitialState());
         emit(const NoteLoadingState());
         var note = await database.getNote(noteId: event.id);
         if (note != null) {
@@ -57,12 +58,12 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
         } else {
           emit(const NoteDeleteErrorState());
         }
-        emit(NoteInitialState());
       },
       transformer: sequential(),
     );
     on<NoteAddEvent>(
       (event, emit) async {
+        emit(NoteInitialState());
         emit(NoteAddingState());
         var note = event.note;
         bool isSuccess = await database.addNote(note: note);
@@ -87,6 +88,14 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
           log("Note edit error");
           emit(NoteEditErrorState());
         }
+      },
+      transformer: sequential(),
+    );
+    on<NoteSearchEvent>(
+      (event, emit) async {
+        emit(NoteSearchingState(keyword: event.keyword));
+        var notes = await database.searchNote(keyword: event.keyword);
+        emit(NoteSearchedState(notes: notes));
       },
       transformer: sequential(),
     );

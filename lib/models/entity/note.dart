@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
 class Note extends Equatable {
-  final int? id;
+  int? id;
   final String title;
   final dynamic content;
   final String color;
 
-  const Note(
+  Note(
       {required this.id,
       required this.title,
       required this.content,

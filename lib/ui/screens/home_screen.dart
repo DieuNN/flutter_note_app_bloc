@@ -1,10 +1,10 @@
 import 'dart:developer';
 
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/app/app_bloc.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
+import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/params/note_params.dart';
@@ -29,11 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
       key: scaffoldKey,
       backgroundColor: Colors.black,
       appBar: HomeAppBarWidget(
-        onSearchClick: () => navigateToSearch(context),
+        onSearchClick: () => _navigateToSearch(context),
         onInfoClick: () => openInfoDialog(context),
       ),
       body: SafeArea(
         child: BlocConsumer<AppBloc, AppState>(
+          listener: (context, state) {},
           buildWhen: (previous, current) {
             if (previous is AppRefreshingState &&
                 current is AppLoadSuccessState) {
@@ -44,9 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
               return true;
             }
             return false;
-          },
-          listener: (context, state) {
-            if (state is AppLoadSuccessState) {}
           },
           builder: (context, state) {
             if (state is AppLoadSuccessState) {
@@ -59,6 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     );
             }
+            if (state is AppRefreshingState) {
+              return const Text("CC");
+            }
             return _buildNoteList([]);
           },
         ),
@@ -70,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   _addNoteButton(BuildContext context) {
     return FloatingActionButton(
       onPressed: () {
+        context.read<NoteBloc>().add(NoteInitEvent());
         _openNoteEditor(context);
       },
       child: const Icon(Icons.add),
@@ -82,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
         .then(
       (value) {
         context.read<AppBloc>().add(AppRefreshEvent());
-        context.read<NoteBloc>().add(NoteInitEvent());
       },
     );
   }
@@ -100,31 +101,52 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   _buildNoteList(List<Note> notes) {
-    return ListView.separated(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 16),
-      itemBuilder: (BuildContext context, int index) {
-        return notes
-            .map((item) => NoteItemWidget(
+    log("Building note list, note length: ${notes.length}");
+    return BlocListener<NoteBloc, NoteState>(
+      listener: (context, state) {},
+      listenWhen: (previous, current) {
+        if (previous is NoteDeletingState &&
+            current is NoteDeleteSuccessState) {
+          context.read<AppBloc>().add(AppRefreshEvent());
+          return true;
+        }
+        if (previous is NoteAddingState && current is NoteAddSuccessState) {
+          context.read<AppBloc>().add(AppRefreshEvent());
+        }
+        return false;
+      },
+      child: ListView.separated(
+        padding:
+            const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 16),
+        itemBuilder: (BuildContext context, int index) {
+          return notes
+              .map(
+                (item) => NoteItemWidget(
                   note: item,
                   key: ValueKey(item.id),
-                  onDelete: () => _onRemoveNoteItem(item),
-                ))
-            .toList()[index];
-      },
-      itemCount: notes.length,
-      separatorBuilder: (BuildContext context, int index) {
-        return const SizedBox(
-          height: 16,
-        );
-      },
+                  onDelete: () {
+                    _deleteNote(item.id!);
+                    _showDeletingSnackBar();
+                    _showUndoDeleteSnackBar(item);
+                  },
+                ),
+              )
+              .toList()[index];
+        },
+        itemCount: notes.length,
+        separatorBuilder: (BuildContext context, int index) {
+          return const SizedBox(
+            height: 16,
+          );
+        },
+      ),
     );
   }
 
-  void _onRemoveNoteItem(Note note) {
-  }
-
-  void navigateToSearch(BuildContext context) {
-    Navigator.of(context).pushNamed("/search");
+  void _navigateToSearch(BuildContext context) {
+    Navigator.of(context).pushNamed("/search").then((value) {
+      context.read<AppBloc>().add(AppRefreshEvent());
+    });
   }
 
   void openInfoDialog(BuildContext context) {
@@ -177,5 +199,55 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _showUndoDeleteSnackBar(Note note) {
+    ScaffoldMessenger.of(scaffoldKey.currentContext!).showSnackBar(
+      SnackBar(
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Note deleted",
+            ),
+            TextButton(
+              onPressed: () {
+                // When widget is dismissed (removed from widget tree), context will be removed too
+                // So we must use parent's context
+                scaffoldKey.currentContext!
+                    .read<NoteBloc>()
+                    .add(NoteAddEvent(note: note));
+                ScaffoldMessenger.of(scaffoldKey.currentContext!)
+                    .removeCurrentSnackBar();
+              },
+              child: const Text(
+                "Undo",
+                style: TextStyle(
+                    color: Colors.white, fontFamily: AppConstants.defaultFont),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeletingSnackBar() {
+    ScaffoldMessenger.of(scaffoldKey.currentContext!).showSnackBar(
+      SnackBar(
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Text(
+              "Note deleting ...",
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _deleteNote(int id) {
+    context.read<NoteBloc>().add(NoteDeleteEvent(id: id));
   }
 }

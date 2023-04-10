@@ -10,7 +10,6 @@ class NoteInitialState extends NoteState {
 }
 
 class NoteLoadingState extends NoteState {
-
   const NoteLoadingState();
 
   @override
@@ -19,6 +18,7 @@ class NoteLoadingState extends NoteState {
 
 class NoteLoadSuccessState extends NoteState {
   final Note note;
+
   const NoteLoadSuccessState({required this.note});
 
   @override
@@ -26,14 +26,11 @@ class NoteLoadSuccessState extends NoteState {
 }
 
 class NoteLoadErrorState extends NoteState {
-
   @override
   List<Object?> get props => throw UnimplementedError();
 
   const NoteLoadErrorState();
 }
-
-
 
 class NoteAddingState extends NoteState {
   @override
@@ -65,9 +62,6 @@ class NoteEditErrorState extends NoteState {
   List<Object?> get props => throw UnimplementedError();
 }
 
-
-
-
 class NoteDeletingState extends NoteState {
   @override
   List<Object?> get props => [];
@@ -86,7 +80,6 @@ class NoteDeleteErrorState extends NoteState {
   @override
   List<Object?> get props => [];
 }
-
 
 class NoteSearchingState extends NoteState {
   final String keyword;

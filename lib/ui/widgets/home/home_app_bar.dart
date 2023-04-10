@@ -1,6 +1,5 @@
 
 
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:note_app/common/app_constants.dart';

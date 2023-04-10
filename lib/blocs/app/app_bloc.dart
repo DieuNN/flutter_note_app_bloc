@@ -3,9 +3,11 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:note_app/main.dart';
 import 'package:note_app/models/enums/database_type.dart';
 import 'package:note_app/repository/implements/note_hive_impl.dart';
+import 'package:note_app/repository/implements/note_secure_storage_impl.dart';
 import 'package:note_app/repository/implements/note_shared_prefs_impl.dart';
 import 'package:note_app/repository/implements/note_sqlite_impl.dart';
 import 'package:note_app/repository/note_repository.dart';
@@ -18,6 +20,8 @@ part 'app_state.dart';
 
 class AppBloc extends Bloc<AppEvent, AppState> {
   AppBloc() : super(AppInitialState()) {
+    // Database type decided when run main function
+
     final NoteRepository database;
     switch (databaseType) {
       case DatabaseType.sqlite:
@@ -28,6 +32,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
         break;
       case DatabaseType.hive:
         database = NoteHiveRepositoryImpl();
+        break;
+      case DatabaseType.secureStorage:
+        database = NoteSecureStorageImpl();
         break;
     }
     on<AppEvent>((event, emit) async {}, transformer: sequential());

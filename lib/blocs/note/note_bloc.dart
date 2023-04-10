@@ -7,6 +7,7 @@ import 'package:note_app/main.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/enums/database_type.dart';
 import 'package:note_app/repository/implements/note_hive_impl.dart';
+import 'package:note_app/repository/implements/note_secure_storage_impl.dart';
 import 'package:note_app/repository/implements/note_shared_prefs_impl.dart';
 import 'package:note_app/repository/note_repository.dart';
 
@@ -29,6 +30,9 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
         break;
       case DatabaseType.hive:
         database = NoteHiveRepositoryImpl();
+        break;
+      case DatabaseType.secureStorage:
+        database = NoteSecureStorageImpl();
         break;
     }
     on<NoteEvent>((event, emit) {});

@@ -19,7 +19,7 @@ late DatabaseType databaseType;
 void main() async {
   binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
-  databaseType = DatabaseType.hive;
+  databaseType = DatabaseType.secureStorage;
 
   if (databaseType == DatabaseType.hive) {
     await Hive.initFlutter();

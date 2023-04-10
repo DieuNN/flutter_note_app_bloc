@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:note_app/blocs/app/app_bloc.dart';
 import 'package:note_app/blocs/editor/editor_bloc.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
 import 'package:note_app/common/extensions.dart';
@@ -40,7 +40,105 @@ class _NoteEditorState extends State<NoteEditor> {
     super.initState();
   }
 
-  Future<bool> _showConfirmDiscard(context) {
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        context.read<NoteBloc>().add(NoteInitEvent());
+        NoteParams? noteParams =
+            ModalRoute.of(context)!.settings.arguments as NoteParams;
+        context.read<AppBloc>().add(AppRefreshEvent());
+        return _showConfirmDiscard(
+            context, noteParams.id, noteParams.isNewNote);
+      },
+      child: BlocListener<NoteBloc, NoteState>(
+        listener: (context, state) {
+          if (state is NoteAddSuccessState || state is NoteEditSuccessState) {
+            _hideKeyboard();
+            _backToHomeScreen(context);
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: NoteEditorAppBarWidget(
+            onEditButtonClick: () {
+              context.read<EditorBloc>().add(ActiveEditor());
+            },
+            onSaveButtonClick: () {
+              bool? isNewNote =
+                  (ModalRoute.of(context)!.settings.arguments as NoteParams)
+                      .isNewNote!;
+              String randomHexColor = HexColor.randomHexColor();
+              int? id =
+                  (ModalRoute.of(context)!.settings.arguments as NoteParams).id;
+
+              if (_titleEditController!.text.trim().isEmpty) {
+                Fluttertoast.showToast(msg: "Title cannot be empty!");
+                return;
+              }
+
+              if (isNewNote) {
+                _saveNote(randomHexColor);
+              } else {
+                _updateNote(id, randomHexColor);
+              }
+            },
+            onViewButtonClick: () {
+              context.read<EditorBloc>().add(DisableEditor());
+            },
+          ),
+          body: BlocConsumer<NoteBloc, NoteState>(
+            builder: (context, state) {
+              log("Current note state is: ${state.runtimeType}");
+              if (state is NoteAddingState) {
+                _quillController = quill.QuillController.basic();
+                _titleEditController = TextEditingController();
+                return _buildEditorScreen(
+                    _quillController!, _titleEditController!);
+              }
+              if (state is NoteLoadingState) {
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: const [
+                    Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              if (state is NoteLoadSuccessState) {
+                _quillController = quill.QuillController(
+                    document:
+                        quill.Document.fromJson(jsonDecode(state.note.content)),
+                    selection: const TextSelection.collapsed(offset: 0));
+                _titleEditController =
+                    TextEditingController(text: state.note.title);
+                return _buildEditorScreen(
+                  _quillController!,
+                  _titleEditController!,
+                );
+              }
+
+              if (_titleEditController == null || _quillController == null) {
+                _quillController = quill.QuillController.basic();
+                _titleEditController = TextEditingController();
+              }
+              return _buildEditorScreen(
+                  _quillController!, _titleEditController!);
+            },
+            listener: (context, state) {},
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _showConfirmDiscard(context, int? noteId, bool? isNewNote) {
+    Future<bool>? result;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -52,8 +150,11 @@ class _NoteEditorState extends State<NoteEditor> {
         actions: [
           TextButton(
             onPressed: () {
-              // _saveNote();
-              // _backToHomeScreen(context);
+              if (isNewNote ?? true) {
+                _saveNote(HexColor.randomHexColor());
+              } else {
+                _updateNote(noteId, HexColor.randomHexColor());
+              }
             },
             child: const Text(
               "Yes",
@@ -65,8 +166,9 @@ class _NoteEditorState extends State<NoteEditor> {
           ),
           TextButton(
             onPressed: () {
-              // _hideKeyboard();
-              // _backToHomeScreen(context);
+              result = Future.value(true);
+              _hideKeyboard();
+              Navigator.popUntil(context, ModalRoute.withName("/"));
             },
             child: const Text(
               "Discard",
@@ -78,10 +180,11 @@ class _NoteEditorState extends State<NoteEditor> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.popUntil(context, ModalRoute.withName("/"));
+              result = Future.value(false);
+              Navigator.pop(context);
             },
             child: const Text(
-              "No",
+              "Cancel",
               style: TextStyle(
                 color: Colors.white,
                 fontFamily: "Nunito",
@@ -91,19 +194,19 @@ class _NoteEditorState extends State<NoteEditor> {
         ],
       ),
     );
-    return Future.value(true);
+    return result ?? Future.value(false);
   }
 
   Widget _buildEditorScreen(quill.QuillController quillController,
       TextEditingController titleController) {
     return Column(
       children: [
-        _titleInput(titleController),
+        _buildTitleInput(titleController),
         const SizedBox(
           height: 8,
         ),
-        _contentEditor(quillController),
-        _editorToolBar(quillController),
+        _buildContentEditor(quillController),
+        _buildEditorToolBar(quillController),
       ],
     );
   }
@@ -116,7 +219,7 @@ class _NoteEditorState extends State<NoteEditor> {
     Navigator.popUntil(context, ModalRoute.withName("/"));
   }
 
-  _contentEditor(quill.QuillController controller) {
+  _buildContentEditor(quill.QuillController controller) {
     return BlocBuilder<EditorBloc, EditorState>(
       builder: (context, state) {
         var isEditable = state is EditorActiveState;
@@ -150,7 +253,7 @@ class _NoteEditorState extends State<NoteEditor> {
     );
   }
 
-  _titleInput(TextEditingController controller) {
+  _buildTitleInput(TextEditingController controller) {
     return BlocBuilder<EditorBloc, EditorState>(
       builder: (context, state) {
         bool isEnabled = (state is EditorActiveState);
@@ -189,7 +292,7 @@ class _NoteEditorState extends State<NoteEditor> {
     );
   }
 
-  _editorToolBar(quill.QuillController controller) {
+  _buildEditorToolBar(quill.QuillController controller) {
     return quill.QuillToolbar.basic(
       controller: controller,
       multiRowsDisplay: false,
@@ -209,100 +312,6 @@ class _NoteEditorState extends State<NoteEditor> {
             ),
           ),
         );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        context.read<NoteBloc>().add(NoteInitEvent());
-        return _showConfirmDiscard(context);
-      },
-      child: BlocListener<NoteBloc, NoteState>(
-        listener: (context, state) {
-          if (state is NoteAddSuccessState || state is NoteEditSuccessState) {
-            _hideKeyboard();
-            _backToHomeScreen(context);
-          }
-        },
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          appBar: NoteEditorAppBarWidget(
-            onEditButtonClick: () {
-              context.read<EditorBloc>().add(ActiveEditor());
-            },
-            onSaveButtonClick: () {
-              bool? isNewNote =
-                  (ModalRoute.of(context)!.settings.arguments as NoteParams)
-                      .isNewNote!;
-              String randomHexColor =
-                  Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-                      .withOpacity(1.0)
-                      .toHex();
-              int? id =
-                  (ModalRoute.of(context)!.settings.arguments as NoteParams).id;
-
-              if (_titleEditController!.text.trim().isEmpty) {
-                Fluttertoast.showToast(msg: "Title cannot be empty!");
-                return;
-              }
-
-              if (isNewNote) {
-                _saveNote(randomHexColor);
-              } else {
-                _updateNote(id, randomHexColor);
-              }
-            },
-            onViewButtonClick: () {
-              context.read<EditorBloc>().add(DisableEditor());
-            },
-          ),
-          body: BlocConsumer<NoteBloc, NoteState>(
-            builder: (context, state) {
-              log("Current note state is: ${state.runtimeType}");
-              if (state is NoteAddingState) {
-                _quillController = quill.QuillController.basic();
-                _titleEditController = TextEditingController();
-                return _buildEditorScreen(
-                    _quillController!, _titleEditController!);
-              }
-              if (state is NoteLoadingState) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: const [
-                    CircularProgressIndicator(
-                      color: Colors.black,
-                      backgroundColor: Colors.white,
-                    )
-                  ],
-                );
-              }
-              if (state is NoteLoadSuccessState) {
-                _quillController = quill.QuillController(
-                    document:
-                        quill.Document.fromJson(jsonDecode(state.note.content)),
-                    selection: const TextSelection.collapsed(offset: 0));
-                _titleEditController =
-                    TextEditingController(text: state.note.title);
-                return _buildEditorScreen(
-                  _quillController!,
-                  _titleEditController!,
-                );
-              }
-
-              if (_titleEditController == null || _quillController == null) {
-                _quillController = quill.QuillController.basic();
-                _titleEditController = TextEditingController();
-              }
-              return _buildEditorScreen(
-                  _quillController!, _titleEditController!);
-            },
-            listener: (context, state) {},
-          ),
-        ),
-      ),
-    );
   }
 
   void _updateNote(int? id, String randomHexColor) {

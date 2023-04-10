@@ -3,23 +3,26 @@ import 'dart:developer';
 
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/repository/note_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
-  // Using "notes" as key and json encoded saved notes to store as key and value
+class NoteSecureStorageImpl extends NoteRepository {
+  Future<FlutterSecureStorage> _getDatabase() async {
+    var database = const FlutterSecureStorage(
+      aOptions: AndroidOptions(
+        encryptedSharedPreferences: true,
+      ),
+    );
+    (await database.read(key: "note_number")) ??
+        (await database.write(key: "note_number", value: 0.toString()));
+    (await database.read(key: "notes")) ??
+        (await database.write(key: "notes", value: jsonEncode([])));
 
-  Future<SharedPreferences> _getDatabase() async {
-    log("Using shared Preferences!");
-    var database = await SharedPreferences.getInstance();
-    // init note id and note list
-    database.getInt("note_number") ?? database.setInt("note_number", 0);
-    database.get("notes") ?? database.setString("notes", jsonEncode([]));
     return database;
   }
 
-  Future<List<Note>> _getSavedNote(SharedPreferences database) async {
+  Future<List<Note>> _getSavedNote(FlutterSecureStorage database) async {
     List<dynamic> notes =
-        await jsonDecode(database.getString("notes") ?? jsonEncode([]));
+        jsonDecode((await database.read(key: "notes")) ?? jsonEncode([]));
 
     List<Note> result = [];
     for (var note in notes) {
@@ -35,24 +38,21 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
   @override
   Future<bool> addNote({required Note note}) async {
     try {
-      log("start adding note");
       var database = await _getDatabase();
-      var id = database.getInt("note_number");
+      var id = await database.read(key: "note_number");
       var notes = await _getSavedNote(database);
-      log(jsonEncode(notes));
       notes.add(
         Note(
-            id: id,
+            id: int.parse(id!),
             title: note.title,
             content: note.content,
             color: note.color),
       );
 
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
-      log("Note added: ${note.id}, ${note.title}, ${note.content}, ${note.color}");
-      id = id! + 1;
-      database.setInt("note_number", id);
+      await database.write(key: "notes", value: encodedNotes);
+      id = (int.parse(id) + 1).toString();
+      await database.write(key: "note_number", value: id.toString());
       return true;
     } catch (e) {
       log(e.toString());
@@ -69,7 +69,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
       var notes = await _getSavedNote(database);
       notes.removeWhere((element) => element.id == id);
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
+      await database.write(key: "notes", value: encodedNotes);
       var end = DateTime.now().millisecondsSinceEpoch;
       log("Note deleted, in ${end - start}ms");
       return true;
@@ -139,7 +139,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
       }
 
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
+      database.write(key: "notes", value: encodedNotes);
       return true;
     } catch (e) {
       return false;

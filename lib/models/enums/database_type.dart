@@ -1,5 +1,6 @@
 enum DatabaseType {
   sqlite,
   sharedPreferences,
-  hive
+  hive,
+  secureStorage
 }

@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.black,
       appBar: HomeAppBarWidget(
         onSearchClick: () => _navigateToSearch(context),
-        onInfoClick: () => openInfoDialog(context),
+        onInfoClick: () => _openInfoDialog(context),
       ),
       body: SafeArea(
         child: BlocConsumer<AppBloc, AppState>(
@@ -38,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
           buildWhen: (previous, current) {
             if (previous is AppRefreshingState &&
                 current is AppLoadSuccessState) {
-              log("Refreshing list");
               return true;
             }
             if (current is AppRefreshingState) {
@@ -49,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (context, state) {
             if (state is AppLoadSuccessState) {
               return state.notes.isEmpty
-                  ? _emptyNotes()
+                  ? _buildEmptyNotesWidget()
                   : RefreshIndicator(
                       child: _buildNoteList(state.notes),
                       onRefresh: () async {
@@ -57,18 +56,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     );
             }
-            if (state is AppRefreshingState) {
-              return const Text("CC");
-            }
+            if (state is AppRefreshingState) {}
             return _buildNoteList([]);
           },
         ),
       ),
-      floatingActionButton: _addNoteButton(context),
+      floatingActionButton: _buildAddNoteButton(context),
     );
   }
 
-  _addNoteButton(BuildContext context) {
+  _buildAddNoteButton(BuildContext context) {
     return FloatingActionButton(
       onPressed: () {
         context.read<NoteBloc>().add(NoteInitEvent());
@@ -88,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  _emptyNotes() {
+  _buildEmptyNotesWidget() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -101,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   _buildNoteList(List<Note> notes) {
-    log("Building note list, note length: ${notes.length}");
     return BlocListener<NoteBloc, NoteState>(
       listener: (context, state) {},
       listenWhen: (previous, current) {
@@ -111,6 +107,9 @@ class _HomeScreenState extends State<HomeScreen> {
           return true;
         }
         if (previous is NoteAddingState && current is NoteAddSuccessState) {
+          context.read<AppBloc>().add(AppRefreshEvent());
+        }
+        if (previous is NoteEditingState && current is NoteEditSuccessState) {
           context.read<AppBloc>().add(AppRefreshEvent());
         }
         return false;
@@ -149,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void openInfoDialog(BuildContext context) {
+  void _openInfoDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

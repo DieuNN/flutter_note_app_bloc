@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -152,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: HexColor.fromHex("252525"),
+        backgroundColor: HexColor.fromHexString("252525"),
         content: Padding(
           padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
           child: Wrap(
@@ -162,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
               RichText(
                 text: TextSpan(
                   style: TextStyle(
-                    color: HexColor.fromHex(
+                    color: HexColor.fromHexString(
                       "CFCFCF",
                     ),
                     fontSize: 15,
@@ -185,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   "Made by Dieu",
                   style: TextStyle(
-                      color: HexColor.fromHex(
+                      color: HexColor.fromHexString(
                         "CFCFCF",
                       ),
                       fontSize: 15,

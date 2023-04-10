@@ -58,7 +58,7 @@ class NoteItemWidget extends StatelessWidget {
           },
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: HexColor.fromHex(note.color),
+              color: HexColor.fromHexString(note.color),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Padding(

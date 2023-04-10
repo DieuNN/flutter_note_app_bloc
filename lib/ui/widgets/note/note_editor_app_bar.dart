@@ -3,20 +3,24 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/editor/editor_bloc.dart';
-import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
 
-class NoteEditorAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
+class NoteEditorAppBarWidget extends StatelessWidget
+    implements PreferredSizeWidget {
   final VoidCallback? onViewButtonClick;
   final VoidCallback? onSaveButtonClick;
   final VoidCallback? onEditButtonClick;
+  final VoidCallback? onOpenColorPickerDialogClick;
+  final Color backgroundColor;
 
-  const NoteEditorAppBarWidget(
-      {Key? key,
-      this.onViewButtonClick,
-      this.onSaveButtonClick,
-      this.onEditButtonClick})
-      : super(key: key);
+  const NoteEditorAppBarWidget({
+    Key? key,
+    this.onViewButtonClick,
+    this.onSaveButtonClick,
+    this.onEditButtonClick,
+    this.onOpenColorPickerDialogClick,
+    required this.backgroundColor,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +29,14 @@ class NoteEditorAppBarWidget extends StatelessWidget implements PreferredSizeWid
         log("State ${state.runtimeType}");
         if (state is EditorActiveState) {
           return AppBar(
-            backgroundColor: Colors.black,
+            backgroundColor: backgroundColor,
             iconTheme: const IconThemeData(color: Colors.white),
             elevation: 0,
             actions: [
+              _buildActionButton(onOpenColorPickerDialogClick!, Icons.colorize),
+              const SizedBox(
+                width: 25,
+              ),
               _buildActionButton(onViewButtonClick!, Icons.remove_red_eye),
               const SizedBox(
                 width: 20,
@@ -64,7 +72,7 @@ class NoteEditorAppBarWidget extends StatelessWidget implements PreferredSizeWid
         DecoratedBox(
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
-              color: HexColor.fromHex("3B3B3B")),
+              color: HexColor.fromHexString("3B3B3B")),
           child: IconButton(
             onPressed: onItemClick,
             icon: Icon(

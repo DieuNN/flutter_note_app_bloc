@@ -85,13 +85,13 @@ class SearchScreen extends StatelessWidget {
             context.read<NoteBloc>().add(NoteSearchEvent(keyword: value));
           },
           style: TextStyle(
-              color: HexColor.fromHex("CCCCCC"),
+              color: HexColor.fromHexString("CCCCCC"),
               fontSize: 20,
               fontWeight: FontWeight.w200,
               fontFamily: "Nunito"),
           decoration: InputDecoration(
             hintStyle: TextStyle(
-              color: HexColor.fromHex("CCCCCC"),
+              color: HexColor.fromHexString("CCCCCC"),
               fontSize: 20,
               fontWeight: FontWeight.w200,
               fontFamily: "Nunito",
@@ -107,8 +107,8 @@ class SearchScreen extends StatelessWidget {
             ),
             hintText: "Search by the keyword...",
             filled: true,
-            fillColor: HexColor.fromHex("3B3B3B"),
-            focusColor: HexColor.fromHex("3B3B3B"),
+            fillColor: HexColor.fromHexString("3B3B3B"),
+            focusColor: HexColor.fromHexString("3B3B3B"),
             focusedBorder:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
             enabledBorder:

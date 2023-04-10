@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -26,6 +27,7 @@ class _NoteEditorState extends State<NoteEditor> {
   quill.QuillController? _quillController;
   final ScrollController _scrollController = ScrollController();
   TextEditingController? _titleEditController;
+  Color _editorBackground = Colors.white;
 
   @override
   void dispose() {
@@ -59,8 +61,11 @@ class _NoteEditorState extends State<NoteEditor> {
           }
         },
         child: Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: _editorBackground,
           appBar: NoteEditorAppBarWidget(
+            onOpenColorPickerDialogClick: () {
+              _showColorPickerDialog();
+            },
             onEditButtonClick: () {
               context.read<EditorBloc>().add(ActiveEditor());
             },
@@ -68,7 +73,7 @@ class _NoteEditorState extends State<NoteEditor> {
               bool? isNewNote =
                   (ModalRoute.of(context)!.settings.arguments as NoteParams)
                       .isNewNote!;
-              String randomHexColor = HexColor.randomHexColor();
+
               int? id =
                   (ModalRoute.of(context)!.settings.arguments as NoteParams).id;
 
@@ -78,14 +83,15 @@ class _NoteEditorState extends State<NoteEditor> {
               }
 
               if (isNewNote) {
-                _saveNote(randomHexColor);
+                _saveNote(HexColor(_editorBackground).toHexString());
               } else {
-                _updateNote(id, randomHexColor);
+                _updateNote(id, HexColor(_editorBackground).toHexString());
               }
             },
             onViewButtonClick: () {
               context.read<EditorBloc>().add(DisableEditor());
             },
+            backgroundColor: _editorBackground,
           ),
           body: BlocConsumer<NoteBloc, NoteState>(
             builder: (context, state) {
@@ -134,6 +140,54 @@ class _NoteEditorState extends State<NoteEditor> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<bool> _showColorPickerDialog() async {
+    return ColorPicker(
+      color: _editorBackground,
+      onColorChanged: (Color color) =>
+          setState(() => _editorBackground = color),
+      width: 40,
+      height: 40,
+      borderRadius: 4,
+      spacing: 5,
+      runSpacing: 5,
+      wheelDiameter: 155,
+      heading: Text(
+        'Select color',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      subheading: Text(
+        'Select color shade',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      wheelSubheading: Text(
+        'Selected color and its shades',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      showMaterialName: true,
+      showColorName: true,
+      showColorCode: true,
+      materialNameTextStyle: Theme.of(context).textTheme.bodySmall,
+      colorNameTextStyle: Theme.of(context).textTheme.bodySmall,
+      // Showing color code prefix and text styled differently in the dialog.
+      colorCodeTextStyle: Theme.of(context).textTheme.bodyMedium,
+      colorCodePrefixStyle: Theme.of(context).textTheme.bodySmall,
+      // Showing the new thumb color property option in dialog version
+      selectedPickerTypeColor: Theme.of(context).colorScheme.primary,
+      pickersEnabled: const <ColorPickerType, bool>{
+        ColorPickerType.both: false,
+        ColorPickerType.primary: true,
+        ColorPickerType.accent: true,
+        ColorPickerType.bw: false,
+        ColorPickerType.custom: true,
+        ColorPickerType.wheel: true,
+      },
+    ).showPickerDialog(
+      context,
+      constraints:
+          const BoxConstraints(minHeight: 460, minWidth: 300, maxWidth: 320),
     );
   }
 
@@ -236,7 +290,7 @@ class _NoteEditorState extends State<NoteEditor> {
             showCursor: isEditable,
             readOnly: !isEditable,
             customStyles: quill.DefaultStyles(
-              color: Colors.white,
+              color: _editorBackground,
               paragraph: quill.DefaultListBlockStyle(
                 const TextStyle(
                     color: Colors.white, fontFamily: "Nunito", fontSize: 23),
@@ -277,7 +331,7 @@ class _NoteEditorState extends State<NoteEditor> {
               ),
               focusedBorder: const UnderlineInputBorder(),
               hintText: "Title",
-              hintStyle: TextStyle(color: HexColor.fromHex("9A9A9A"))),
+              hintStyle: TextStyle(color: HexColor.fromHexString("9A9A9A"))),
           maxLines: null,
           keyboardType: TextInputType.multiline,
           cursorColor: Colors.white,

@@ -49,7 +49,7 @@ class HomeAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         DecoratedBox(
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
-              color: HexColor.fromHex("3B3B3B")),
+              color: HexColor.fromHexString("3B3B3B")),
           child: IconButton(
             onPressed: onItemClick,
             icon: Icon(

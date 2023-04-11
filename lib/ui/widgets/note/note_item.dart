@@ -8,6 +8,7 @@ import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:note_app/ui/screens/home_screen.dart';
 
 class NoteItemWidget extends StatelessWidget {
   final Note note;
@@ -52,7 +53,7 @@ class NoteItemWidget extends StatelessWidget {
             )
                 .then(
               (value) {
-                context.read<AppBloc>().add(AppRefreshEvent());
+                scaffoldKey.currentContext!.read<AppBloc>().add(AppRefreshEvent());
               },
             );
           },

@@ -52,6 +52,7 @@ dependencies:
   hive_flutter: ^1.1.0
   flutter_secure_storage: ^8.0.0
   flex_color_picker: ^3.2.0
+  flutter_launcher_icons: ^0.13.0
 
 dev_dependencies:
   flutter_test:
@@ -108,3 +109,21 @@ flutter:
 flutter_native_splash:
   color: "#000000"
   image: assets/empty.png
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/empty.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/empty.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
+  windows:
+    generate: true
+    image_path: "assets/empty.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/empty.png"

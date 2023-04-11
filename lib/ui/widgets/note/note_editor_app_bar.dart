@@ -49,7 +49,7 @@ class NoteEditorAppBarWidget extends StatelessWidget
           );
         }
         return AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: backgroundColor,
           iconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
           actions: [

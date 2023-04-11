@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,22 @@ import 'package:note_app/ui/widgets/search/no_result.dart';
 
 import '../../blocs/note/note_bloc.dart';
 
-class SearchScreen extends StatelessWidget {
-  SearchScreen({Key? key}) : super(key: key);
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _textEditingController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,21 +52,10 @@ class SearchScreen extends StatelessWidget {
     return Expanded(
       child: BlocBuilder<NoteBloc, NoteState>(
         builder: (context, state) {
-          log("Searching state is ${state.runtimeType}");
-          if (state is NoteSearchingState) {
-            return const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: Colors.white,
-                  color: Colors.black,
-                ),
-              ),
-            );
-          }
           if (state is NoteSearchedState) {
             var notes = state.notes;
-            if (notes.isEmpty || _textEditingController.text.isEmpty) {
-              return const Expanded(child: NoResultWidget());
+            if (notes.isEmpty || _textEditingController.text.trim().isEmpty) {
+              return const Center(child: NoResultWidget());
             }
             return ListView.separated(
               itemBuilder: (BuildContext context, int index) {
@@ -76,14 +79,23 @@ class SearchScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _onSearchResult(String keyword) async {
+    if (_debounce?.isActive ?? false) {
+      _debounce?.cancel();
+    }
+
+    _debounce = Timer(const Duration(seconds: 1), () {
+      log("is my debounce active?  ${_debounce?.isActive}");
+      context.read<NoteBloc>().add(NoteSearchEvent(keyword: keyword));
+    });
+  }
+
   Widget _buildSearchTextField(BuildContext context) {
     return BlocBuilder<NoteBloc, NoteState>(
       builder: (context, state) {
         return TextField(
           controller: _textEditingController,
-          onChanged: (value) {
-            context.read<NoteBloc>().add(NoteSearchEvent(keyword: value));
-          },
+          onChanged: (value) async => _onSearchResult(value),
           style: TextStyle(
               color: HexColor.fromHexString("CCCCCC"),
               fontSize: 20,

@@ -48,8 +48,6 @@ class MyApp extends StatelessWidget {
       ],
       child: BlocBuilder<AppBloc, AppState>(
         builder: (context, state) {
-          FlutterNativeSplash.remove();
-          log("Current app state is: ${state.runtimeType}");
           if (state is AppInitialState || state is AppLoadingState) {
             if (state is AppInitialState) {
               context.read<AppBloc>().add(AppLoadNotesEvent());
@@ -61,6 +59,7 @@ class MyApp extends StatelessWidget {
               ),
             );
           }
+          FlutterNativeSplash.remove();
           return MaterialApp(
             title: 'Flutter Demo',
             theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
@@ -68,7 +67,7 @@ class MyApp extends StatelessWidget {
             routes: {
               "/": (context) =>
                   HomeScreen(notes: (state as AppLoadSuccessState).notes),
-              "/search": (context) => SearchScreen(),
+              "/search": (context) => const SearchScreen(),
               "/detail": (context) => const NoteEditor(),
             },
             initialRoute: "/",

@@ -50,8 +50,8 @@ class NoteSqliteRepositoryImpl implements NoteRepository {
     try {
       var database = await _getDatabase();
       Map<String, Object?> note = (await database.rawQuery(
-          "select id, title, content, color from note where id = ?",
-          [noteId]))
+              "select id, title, content, color from note where id = ?",
+              [noteId]))
           .first;
 
       String title = note["title"].toString();
@@ -95,10 +95,12 @@ class NoteSqliteRepositoryImpl implements NoteRepository {
   @override
   Future<bool> updateNote({required Note newNote, required num id}) async {
     var database = await _getDatabase();
+    log("In NoteSqlite, color is: ${newNote.color}");
     int result = await database.rawUpdate(
         "update note set title = ?, content = ?, color = ? where id = ?",
         [newNote.title, newNote.content, newNote.color, id]);
     if (result > 0) {
+      log("Update note result: $result");
       log("Updated at $id, value: $newNote");
     }
     return result > 0;

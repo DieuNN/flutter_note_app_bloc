@@ -41,8 +41,7 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
     }, transformer: sequential());
     on<NoteLoadEvent>(
       (event, emit) async {
-        emit(NoteInitialState());
-        emit(const NoteLoadingState());
+        emit(NoteLoadingState());
         var note = await database.getNote(noteId: event.id);
         if (note != null) {
           emit(NoteLoadSuccessState(note: note));
@@ -85,6 +84,7 @@ class NoteBloc extends Bloc<NoteEvent, NoteState> {
         emit(NoteEditingState());
         bool isSuccess =
             await database.updateNote(newNote: event.note, id: event.id);
+        log("In NoteEditEvent, color is: ${event.note.color}");
         if (isSuccess) {
           log("Note edit success");
           emit(NoteEditSuccessState());

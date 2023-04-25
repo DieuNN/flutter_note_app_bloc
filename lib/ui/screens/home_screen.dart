@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/app/app_bloc.dart';
@@ -22,6 +21,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<Note> notes = [];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    context.read<AppBloc>().add(AppLoadNotesEvent());
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,32 +44,22 @@ class _HomeScreenState extends State<HomeScreen> {
         onInfoClick: () => _openInfoDialog(context),
       ),
       body: SafeArea(
-        child: BlocConsumer<AppBloc, AppState>(
-          listener: (context, state) {},
-          buildWhen: (previous, current) {
-            if (previous is AppRefreshingState &&
-                current is AppLoadSuccessState) {
-              return true;
-            }
-            if (current is AppRefreshingState) {
-              return true;
-            }
-            return false;
-          },
-          builder: (context, state) {
+        child: BlocListener<AppBloc, AppState>(
+          listener: (context, state) {
             if (state is AppLoadSuccessState) {
-              return state.notes.isEmpty
-                  ? _buildEmptyNotesWidget()
-                  : RefreshIndicator(
-                      child: _buildNoteList(state.notes),
-                      onRefresh: () async {
-                        context.read<AppBloc>().add(AppRefreshEvent());
-                      },
-                    );
+              setState(() {
+                notes = state.notes;
+              });
             }
-            if (state is AppRefreshingState) {}
-            return _buildNoteList([]);
           },
+          child: notes.isEmpty
+              ? _buildEmptyNotesWidget()
+              : RefreshIndicator(
+                  child: _buildNoteList(notes),
+                  onRefresh: () async {
+                    context.read<AppBloc>().add(AppRefreshEvent());
+                  },
+                ),
         ),
       ),
       floatingActionButton: _buildAddNoteButton(context),
@@ -215,6 +217,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 scaffoldKey.currentContext!
                     .read<NoteBloc>()
                     .add(NoteAddEvent(note: note));
+                scaffoldKey.currentContext!
+                    .read<AppBloc>()
+                    .add(AppRefreshEvent());
                 ScaffoldMessenger.of(scaffoldKey.currentContext!)
                     .removeCurrentSnackBar();
               },

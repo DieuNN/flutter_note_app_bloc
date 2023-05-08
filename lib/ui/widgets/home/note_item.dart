@@ -3,12 +3,14 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/app_cubit.dart';
-import 'package:note_app/blocs/note/note_bloc.dart';
+import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
+import 'package:note_app/models/enums/app_theme.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:note_app/ui/screens/home_screen.dart';
+import 'package:note_app/ui/screens/note/note_cubit.dart';
+import 'package:note_app/ui/screens/note/note_screen.dart';
 
 class NoteItemWidget extends StatelessWidget {
   final Note note;
@@ -21,6 +23,8 @@ class NoteItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isLightTheme =
+        context.read<AppSettingsCubit>().isLightTheme;
     return Slidable(
       key: UniqueKey(),
       endActionPane: ActionPane(
@@ -43,19 +47,12 @@ class NoteItemWidget extends StatelessWidget {
         width: MediaQuery.of(context).size.width,
         child: GestureDetector(
           onTap: () {
-            log("passing note item id: ${note.id}");
-            context.read<NoteBloc>().add(NoteLoadEvent(id: note.id!));
-            log("Note item param id is: ${note.id}");
+            // Refresh after push back
             Navigator.of(context)
-                .pushNamed(
-              "/detail",
-              arguments: NoteParams(id: note.id),
-            )
-                .then(
-              (value) {
-                scaffoldKey.currentContext!.read<AppCubit>().refreshNote();
-              },
-            );
+                .pushNamed("/detail", arguments: NoteParams(id: note.id))
+                .then((value) {
+              context.read<AppCubit>().refreshNote();
+            });
           },
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -69,11 +66,12 @@ class NoteItemWidget extends StatelessWidget {
                 children: [
                   Text(
                     note.title,
-                    style: const TextStyle(
-                        color: Colors.black,
-                        fontFamily: "Nunito",
-                        fontSize: 25),
-                  )
+                    style: TextStyle(
+                      color: isLightTheme ? Colors.white : Colors.black,
+                      fontFamily: "Nunito",
+                      fontSize: 25,
+                    ),
+                  ),
                 ],
               ),
             ),

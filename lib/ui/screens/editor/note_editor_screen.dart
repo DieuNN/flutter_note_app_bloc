@@ -7,22 +7,27 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:note_app/blocs/editor/editor_bloc.dart';
-import 'package:note_app/blocs/note/note_bloc.dart';
+import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
+import 'package:note_app/models/enums/app_theme.dart';
+import 'package:note_app/models/enums/editor_status.dart';
+import 'package:note_app/models/enums/load_status.dart';
 import 'package:note_app/models/params/note_params.dart';
+import 'package:note_app/ui/screens/editor/editor_cubit.dart';
+import 'package:note_app/ui/screens/note/note_cubit.dart';
+import 'package:note_app/ui/widgets/editor/note_editor_app_bar.dart';
 
-import '../widgets/note/note_editor_app_bar.dart';
+import '../../../models/enums/crud_status.dart';
 
-class NoteEditor extends StatefulWidget {
-  const NoteEditor({Key? key}) : super(key: key);
+class NoteEditorScreen extends StatefulWidget {
+  const NoteEditorScreen({Key? key}) : super(key: key);
 
   @override
-  State<NoteEditor> createState() => _NoteEditorState();
+  State<NoteEditorScreen> createState() => _NoteEditorScreenState();
 }
 
-class _NoteEditorState extends State<NoteEditor> {
+class _NoteEditorScreenState extends State<NoteEditorScreen> {
   late quill.QuillController quillController;
   final ScrollController scrollController = ScrollController();
   late TextEditingController titleEditController;
@@ -48,33 +53,28 @@ class _NoteEditorState extends State<NoteEditor> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     noteParams = ModalRoute.of(context)!.settings.arguments as NoteParams;
-    context.read<EditorBloc>().add(DisableEditor());
+    context.read<EditorCubit>().disableEditor();
     if (noteParams?.isNewNote != true) {
-      context.read<NoteBloc>().add(NoteLoadEvent(id: noteParams!.id!));
+      context.read<NoteCubit>().loadNote(noteId: noteParams!.id!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
+      onWillPop: () {
         return showConfirmDiscardDialog(
             context, noteParams?.id, noteParams?.isNewNote);
       },
-      child: BlocConsumer<NoteBloc, NoteState>(
+      child: BlocConsumer<NoteCubit, NoteState>(
         listener: (context, state) {
-          if (state is NoteAddSuccessState || state is NoteEditSuccessState) {
-            hideKeyboard();
-            backToHomeScreen(context);
-          }
-          if (state is NoteLoadSuccessState) {
-            setState(() {
-              editorBackground = HexColor.fromHexString(state.note.color);
-              titleEditController.text = state.note.title;
-              quillController.document =
-                  quill.Document.fromJson(jsonDecode(state.note.content));
-            });
-          }
+          log("Editor state: ${state.crudStatus}");
+          setState(() {
+            editorBackground = HexColor.fromHexString(state.note!.color);
+            titleEditController.text = state.note!.title;
+            quillController.document =
+                quill.Document.fromJson(jsonDecode(state.note!.content));
+          });
         },
         builder: (context, state) => Scaffold(
           backgroundColor: editorBackground,
@@ -83,9 +83,10 @@ class _NoteEditorState extends State<NoteEditor> {
               showColorPickerDialog();
             },
             onEditButtonClick: () {
-              context.read<EditorBloc>().add(ActiveEditor());
+              context.read<EditorCubit>().activeEditor();
             },
             onSaveButtonClick: () {
+              log("Save clicked");
               bool? isNewNote = noteParams?.isNewNote;
               int? id =
                   (ModalRoute.of(context)!.settings.arguments as NoteParams).id;
@@ -100,9 +101,11 @@ class _NoteEditorState extends State<NoteEditor> {
               } else {
                 updateNote(id);
               }
+              hideKeyboard();
+              backToHomeScreen(context);
             },
             onViewButtonClick: () {
-              context.read<EditorBloc>().add(DisableEditor());
+              context.read<EditorCubit>().disableEditor();
             },
             backgroundColor: editorBackground,
           ),
@@ -162,14 +165,13 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   Future<bool> showConfirmDiscardDialog(context, int? noteId, bool? isNewNote) {
-    Future<bool>? result;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.black,
-        title: const Text(
+        backgroundColor: context.read<AppSettingsCubit>().isLightTheme ? Colors.white : Colors.black,
+        title:  Text(
           "Save changes?",
-          style: TextStyle(color: Colors.white, fontFamily: "Nunito"),
+          style: TextStyle(color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white, fontFamily: "Nunito"),
         ),
         actions: [
           TextButton(
@@ -179,38 +181,38 @@ class _NoteEditorState extends State<NoteEditor> {
               } else {
                 updateNote(noteId);
               }
-            },
-            child: const Text(
-              "Yes",
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: "Nunito",
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              result = Future.value(true);
               hideKeyboard();
               Navigator.popUntil(context, ModalRoute.withName("/"));
             },
-            child: const Text(
-              "Discard",
+            child:  Text(
+              "Yes",
               style: TextStyle(
-                color: Colors.white,
+                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
                 fontFamily: "Nunito",
               ),
             ),
           ),
           TextButton(
             onPressed: () {
-              result = Future.value(false);
+              hideKeyboard();
+              Navigator.popUntil(context, ModalRoute.withName("/"));
+            },
+            child:  Text(
+              "Discard",
+              style: TextStyle(
+                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
+                fontFamily: "Nunito",
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
               Navigator.pop(context);
             },
-            child: const Text(
+            child:  Text(
               "Cancel",
               style: TextStyle(
-                color: Colors.white,
+                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
                 fontFamily: "Nunito",
               ),
             ),
@@ -218,7 +220,7 @@ class _NoteEditorState extends State<NoteEditor> {
         ],
       ),
     );
-    return result ?? Future.value(false);
+    return Future.value(false);
   }
 
   Widget buildEditorScreen(quill.QuillController quillController,
@@ -244,9 +246,9 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   buildContentEditor(quill.QuillController controller) {
-    return BlocBuilder<EditorBloc, EditorState>(
+    return BlocBuilder<EditorCubit, EditorState>(
       builder: (context, state) {
-        var isEditable = state is EditorActiveState;
+        var isEditable = state.editorStatus == EditorStatus.active;
         return Expanded(
           child: quill.QuillEditor(
             padding: const EdgeInsets.only(left: 8, right: 8),
@@ -262,8 +264,8 @@ class _NoteEditorState extends State<NoteEditor> {
             customStyles: quill.DefaultStyles(
               color: editorBackground,
               paragraph: quill.DefaultListBlockStyle(
-                const TextStyle(
-                    color: Colors.white, fontFamily: "Nunito", fontSize: 23),
+                 TextStyle(
+                    color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white, fontFamily: "Nunito", fontSize: 23),
                 const quill.VerticalSpacing(6, 0),
                 const quill.VerticalSpacing(8, 8),
                 null,
@@ -278,9 +280,9 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   buildTitleInput(TextEditingController controller) {
-    return BlocBuilder<EditorBloc, EditorState>(
+    return BlocBuilder<EditorCubit, EditorState>(
       builder: (context, state) {
-        bool isEnabled = (state is EditorActiveState);
+        bool isEnabled = (state.editorStatus == EditorStatus.active);
         return TextField(
           controller: controller,
           enabled: isEnabled,
@@ -304,9 +306,9 @@ class _NoteEditorState extends State<NoteEditor> {
               hintStyle: TextStyle(color: HexColor.fromHexString("9A9A9A"))),
           maxLines: null,
           keyboardType: TextInputType.multiline,
-          cursorColor: Colors.white,
-          style: const TextStyle(
-            color: Colors.white,
+          cursorColor: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
+          style:  TextStyle(
+            color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
             fontFamily: "Nunito",
             fontSize: 35,
           ),
@@ -325,35 +327,26 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   void saveNote(String randomHexColor) {
-    context.read<NoteBloc>().add(
-          NoteAddEvent(
-            note: Note(
-              id: null,
-              title: titleEditController.text,
-              content: jsonEncode(quillController.document.toDelta().toJson()),
-              color: randomHexColor,
-            ),
+    context.read<NoteCubit>().addNote(
+          note: Note(
+            id: null,
+            title: titleEditController.text,
+            content: jsonEncode(quillController.document.toDelta().toJson()),
+            color: randomHexColor,
           ),
         );
   }
 
-  int count = 0;
-
   void updateNote(int? id) {
-    log("In EditorScreen, color is: ${HexColor(editorBackground).toHexString()}");
-    count++;
-    log("Updated time: $count");
-    context.read<NoteBloc>().add(
-          NoteEditEvent(
-            note: Note(
-              id: null,
-              color:
-                  HexColor(editorBackground).toHexString(leadingHashSign: true),
-              title: titleEditController.text,
-              content: jsonEncode(quillController.document.toDelta().toJson()),
-            ),
-            id: id!,
+    context.read<NoteCubit>().updateNote(
+          newNote: Note(
+            id: null,
+            color:
+                HexColor(editorBackground).toHexString(leadingHashSign: true),
+            title: titleEditController.text,
+            content: jsonEncode(quillController.document.toDelta().toJson()),
           ),
+          id: id!,
         );
   }
 }

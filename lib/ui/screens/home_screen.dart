@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/app/app_bloc.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
 import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
+import 'package:note_app/main.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:note_app/ui/widgets/home/empty_notes.dart';
@@ -22,6 +25,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Note> notes = [];
+  List<String> databases = [
+    "Sqlite",
+    "Shared Preference",
+    "Hive",
+    "Secure Storage"
+  ];
+  late String currentDatabase;
 
   @override
   void initState() {
@@ -29,29 +39,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    context.read<AppBloc>().add(AppLoadNotesEvent());
+  void didChangeDependencies() async {
+    context.read<AppBloc>().add(AppRefreshEvent());
+    currentDatabase = await getDatabaseName();
     super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      backgroundColor: Colors.black,
-      appBar: HomeAppBarWidget(
-        onSearchClick: () => _navigateToSearch(context),
-        onInfoClick: () => _openInfoDialog(context),
-      ),
-      body: SafeArea(
-        child: BlocListener<AppBloc, AppState>(
-          listener: (context, state) {
-            if (state is AppLoadSuccessState) {
-              setState(() {
-                notes = state.notes;
-              });
-            }
-          },
+    return BlocListener<AppBloc, AppState>(
+      listener: (context, state) {
+        if (state is AppLoadSuccessState) {
+          setState(() {
+            notes = state.notes;
+          });
+        }
+      },
+      child: Scaffold(
+        key: scaffoldKey,
+        backgroundColor: Colors.black,
+        appBar: HomeAppBarWidget(
+          onSearchClick: () => _navigateToSearch(context),
+          onInfoClick: () => _openInfoDialog(context),
+        ),
+        body: SafeArea(
           child: notes.isEmpty
               ? _buildEmptyNotesWidget()
               : RefreshIndicator(
@@ -61,8 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
         ),
+        floatingActionButton: _buildAddNoteButton(context),
       ),
-      floatingActionButton: _buildAddNoteButton(context),
     );
   }
 
@@ -193,11 +204,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 2,
                       fontFamily: "Nunito"),
                 ),
-              )
+              ),
+              Center(
+                child: _buildDatabasePicker(),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> changeDbAndRestartApp(String name) async {
+    await setDatabaseName(name);
+    exit(0);
+  }
+
+  Widget _buildDatabasePicker() {
+    return DropdownButton(
+      value: currentDatabase,
+      items: databases
+          .map(
+            (e) => DropdownMenuItem(
+              value: e,
+              child: Text(
+                e,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: (value) async {
+        await changeDbAndRestartApp(value!);
+      },
     );
   }
 

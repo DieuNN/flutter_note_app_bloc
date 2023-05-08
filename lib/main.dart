@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:note_app/blocs/app_cubit.dart';
-import 'package:note_app/blocs/editor/editor_bloc.dart';
-import 'package:note_app/blocs/note/note_bloc.dart';
+import 'package:note_app/blocs/settings/app_settings_cubit.dart';
+import 'package:note_app/models/enums/app_theme.dart';
 import 'package:note_app/models/enums/database_type.dart';
 import 'package:note_app/models/enums/load_status.dart';
 import 'package:note_app/repository/implements/note_hive_impl.dart';
@@ -14,11 +14,13 @@ import 'package:note_app/repository/implements/note_secure_storage_impl.dart';
 import 'package:note_app/repository/implements/note_shared_prefs_impl.dart';
 import 'package:note_app/repository/implements/note_sqlite_impl.dart';
 import 'package:note_app/repository/note_repository.dart';
-import 'package:note_app/ui/screens/search_screen.dart';
-import 'package:note_app/ui/screens/note_editor_screen.dart';
+import 'package:note_app/ui/screens/editor/editor_cubit.dart';
+import 'package:note_app/ui/screens/note/note_cubit.dart';
+import 'package:note_app/ui/screens/note/note_screen.dart';
+import 'package:note_app/ui/screens/search/search_cubit.dart';
+import 'package:note_app/ui/screens/search/search_screen.dart';
+import 'package:note_app/ui/screens/editor/note_editor_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'ui/screens/home_screen.dart';
 
 late WidgetsBinding binding;
 late DatabaseType databaseType;
@@ -102,10 +104,16 @@ class MyApp extends StatelessWidget {
           create: (context) => AppCubit(noteRepository: database)..loadNotes(),
         ),
         BlocProvider(
-          create: (context) => NoteBloc()..add(NoteInitEvent()),
+          create: (context) => NoteCubit(repository: database),
         ),
         BlocProvider(
-          create: (context) => EditorBloc()..add(InitialEditor()),
+          create: (context) => EditorCubit(),
+        ),
+        BlocProvider(
+          create: (context) => SearchCubit(repository: database),
+        ),
+        BlocProvider(
+          create: (context) => AppSettingsCubit(),
         ),
       ],
       child: BlocConsumer<AppCubit, AppState>(
@@ -122,25 +130,37 @@ class MyApp extends StatelessWidget {
           return false;
         },
         builder: (context, state) {
-          log("Main state: ${state.loadStatus}");
           if (state.loadStatus == LoadStatus.success) {
             return MaterialApp(
               title: 'Flutter Demo',
-              theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+              theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true).copyWith(
+                textTheme: Theme.of(context).textTheme.apply(
+                  bodyColor: context.watch<AppSettingsCubit>().isLightTheme
+                      ? Colors.black
+                      : Colors.white,
+                  displayColor: context.watch<AppSettingsCubit>().isLightTheme
+                    ? Colors.black
+                    : Colors.white
+                ),
+              ),
               themeMode: ThemeMode.dark,
               routes: {
-                "/": (context) => HomeScreen(notes: state.notes ?? []),
+                "/": (context) => NotesScreen(notes: state.notes ?? []),
                 "/search": (context) => const SearchScreen(),
-                "/detail": (context) => const NoteEditor(),
+                "/detail": (context) => const NoteEditorScreen(),
               },
               initialRoute: "/",
               debugShowCheckedModeBanner: false,
             );
           }
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
-              backgroundColor: Colors.white,
+              color: context.read<AppSettingsCubit>().isLightTheme
+                  ? Colors.black
+                  : Colors.white,
+              backgroundColor: context.read<AppSettingsCubit>().isLightTheme
+                  ? Colors.white
+                  : Colors.black,
             ),
           );
         },

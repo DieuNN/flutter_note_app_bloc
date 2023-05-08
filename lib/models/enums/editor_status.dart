@@ -1,0 +1,4 @@
+enum EditorStatus {
+  active,
+  disabled
+}

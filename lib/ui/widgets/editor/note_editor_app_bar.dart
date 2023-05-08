@@ -2,8 +2,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:note_app/blocs/editor/editor_bloc.dart';
 import 'package:note_app/common/extensions.dart';
+import 'package:note_app/models/enums/editor_status.dart';
+import 'package:note_app/ui/screens/editor/editor_cubit.dart';
 
 class NoteEditorAppBarWidget extends StatelessWidget
     implements PreferredSizeWidget {
@@ -24,10 +25,10 @@ class NoteEditorAppBarWidget extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<EditorBloc, EditorState>(
+    return BlocBuilder<EditorCubit, EditorState>(
       builder: (context, state) {
-        log("State ${state.runtimeType}");
-        if (state is EditorActiveState) {
+        log("Appbar state: ${state.editorStatus}");
+        if (state.editorStatus == EditorStatus.active) {
           return AppBar(
             backgroundColor: backgroundColor,
             iconTheme: const IconThemeData(color: Colors.white),

@@ -2,8 +2,11 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
+import 'package:note_app/models/enums/app_theme.dart';
 
 class HomeAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onSearchClick;
@@ -15,15 +18,17 @@ class HomeAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    bool isLightTheme = context.read<AppSettingsCubit>().isLightTheme;
+
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: isLightTheme ? Colors.white : Colors.black,
       elevation: 0,
-      title: const Text(
+      title:  Text(
         "Notes",
         style: TextStyle(
           fontFamily: AppConstants.defaultFont,
           fontSize: 43,
-          color: Colors.white,
+          color: isLightTheme ? Colors.black : Colors.white,
           fontWeight: FontWeight.w400,
         ),
       ),

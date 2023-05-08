@@ -3,11 +3,13 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/extensions.dart';
-import 'package:note_app/ui/widgets/note/note_item.dart';
+import 'package:note_app/models/enums/search_status.dart';
+import 'package:note_app/ui/screens/note/note_cubit.dart';
+import 'package:note_app/ui/screens/search/search_cubit.dart';
+import 'package:note_app/ui/widgets/home/note_item.dart';
 import 'package:note_app/ui/widgets/search/no_result.dart';
-
-import '../../blocs/note/note_bloc.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -29,7 +31,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.read<AppSettingsCubit>().isLightTheme ? Colors.white : Colors.black,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -50,17 +52,18 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSearchResultListView() {
     return Expanded(
-      child: BlocBuilder<NoteBloc, NoteState>(
+      child: BlocBuilder<SearchCubit, SearchState>(
         builder: (context, state) {
-          if (state is NoteSearchedState) {
+          if (state.searchStatus == SearchStatus.success) {
             var notes = state.notes;
-            if (notes.isEmpty || _textEditingController.text.trim().isEmpty) {
+            if (state.notes!.isEmpty ||
+                _textEditingController.text.trim().isEmpty) {
               return const Center(child: NoResultWidget());
             }
             return ListView.separated(
               itemBuilder: (BuildContext context, int index) {
                 return NoteItemWidget(
-                  note: state.notes[index],
+                  note: state.notes![index],
                 );
               },
               separatorBuilder: (BuildContext context, int index) {
@@ -68,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   height: 16,
                 );
               },
-              itemCount: notes.length,
+              itemCount: state.notes!.length,
             );
           }
           return const Center(
@@ -86,12 +89,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
     _debounce = Timer(const Duration(seconds: 1), () {
       log("is my debounce active?  ${_debounce?.isActive}");
-      context.read<NoteBloc>().add(NoteSearchEvent(keyword: keyword));
+      context.read<SearchCubit>().search(keyword: keyword);
     });
   }
 
   Widget _buildSearchTextField(BuildContext context) {
-    return BlocBuilder<NoteBloc, NoteState>(
+    return BlocBuilder<SearchCubit, SearchState>(
       builder: (context, state) {
         return TextField(
           controller: _textEditingController,
@@ -112,9 +115,9 @@ class _SearchScreenState extends State<SearchScreen> {
               onPressed: () {
                 _textEditingController.clear();
               },
-              icon: const Icon(
+              icon:  Icon(
                 Icons.close,
-                color: Colors.white,
+                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.white : Colors.black,
               ),
             ),
             hintText: "Search by the keyword...",

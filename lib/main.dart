@@ -4,10 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:note_app/blocs/app/app_bloc.dart';
+import 'package:note_app/blocs/app_cubit.dart';
 import 'package:note_app/blocs/editor/editor_bloc.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
 import 'package:note_app/models/enums/database_type.dart';
+import 'package:note_app/models/enums/load_status.dart';
+import 'package:note_app/repository/implements/note_hive_impl.dart';
+import 'package:note_app/repository/implements/note_secure_storage_impl.dart';
+import 'package:note_app/repository/implements/note_shared_prefs_impl.dart';
+import 'package:note_app/repository/implements/note_sqlite_impl.dart';
+import 'package:note_app/repository/note_repository.dart';
 import 'package:note_app/ui/screens/search_screen.dart';
 import 'package:note_app/ui/screens/note_editor_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,10 +81,25 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final NoteRepository database;
+    switch (databaseType) {
+      case DatabaseType.sqlite:
+        database = NoteSqliteRepositoryImpl();
+        break;
+      case DatabaseType.sharedPreferences:
+        database = NoteSharedPreferencesRepositoryImpl();
+        break;
+      case DatabaseType.hive:
+        database = NoteHiveRepositoryImpl();
+        break;
+      case DatabaseType.secureStorage:
+        database = NoteSecureStorageImpl();
+        break;
+    }
     return MultiRepositoryProvider(
       providers: [
         BlocProvider(
-          create: (context) => AppBloc()..add(AppLoadNotesEvent()),
+          create: (context) => AppCubit(noteRepository: database)..loadNotes(),
         ),
         BlocProvider(
           create: (context) => NoteBloc()..add(NoteInitEvent()),
@@ -87,26 +108,28 @@ class MyApp extends StatelessWidget {
           create: (context) => EditorBloc()..add(InitialEditor()),
         ),
       ],
-      child: BlocConsumer<AppBloc, AppState>(
+      child: BlocConsumer<AppCubit, AppState>(
         listener: (context, state) {
-          if (state is AppLoadSuccessState) {
+          if (state.loadStatus == LoadStatus.success) {
             FlutterNativeSplash.remove();
           }
         },
         buildWhen: (previous, current) {
-          if (previous is AppLoadingState && current is AppLoadSuccessState) {
+          if (previous.loadStatus == LoadStatus.loading &&
+              current.loadStatus == LoadStatus.success) {
             return true;
           }
           return false;
         },
         builder: (context, state) {
-          if (state is AppLoadSuccessState) {
+          log("Main state: ${state.loadStatus}");
+          if (state.loadStatus == LoadStatus.success) {
             return MaterialApp(
               title: 'Flutter Demo',
               theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
               themeMode: ThemeMode.dark,
               routes: {
-                "/": (context) => HomeScreen(notes: state.notes),
+                "/": (context) => HomeScreen(notes: state.notes ?? []),
                 "/search": (context) => const SearchScreen(),
                 "/detail": (context) => const NoteEditor(),
               },

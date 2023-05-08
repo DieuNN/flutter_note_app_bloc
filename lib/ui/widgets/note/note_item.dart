@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:note_app/blocs/app/app_bloc.dart';
+import 'package:note_app/blocs/app_cubit.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
@@ -53,7 +53,7 @@ class NoteItemWidget extends StatelessWidget {
             )
                 .then(
               (value) {
-                scaffoldKey.currentContext!.read<AppBloc>().add(AppRefreshEvent());
+                scaffoldKey.currentContext!.read<AppCubit>().refreshNote();
               },
             );
           },

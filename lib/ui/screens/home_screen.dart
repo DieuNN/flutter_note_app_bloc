@@ -2,12 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:note_app/blocs/app/app_bloc.dart';
+import 'package:note_app/blocs/app_cubit.dart';
 import 'package:note_app/blocs/note/note_bloc.dart';
 import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/main.dart';
 import 'package:note_app/models/entity/note.dart';
+import 'package:note_app/models/enums/load_status.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:note_app/ui/widgets/home/empty_notes.dart';
 import 'package:note_app/ui/widgets/home/home_app_bar.dart';
@@ -40,18 +41,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void didChangeDependencies() async {
-    context.read<AppBloc>().add(AppRefreshEvent());
+    context.read<AppCubit>().refreshNote();
     currentDatabase = await getDatabaseName();
     super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AppBloc, AppState>(
+    return BlocListener<AppCubit, AppState>(
       listener: (context, state) {
-        if (state is AppLoadSuccessState) {
+        if (state.loadStatus == LoadStatus.success) {
           setState(() {
-            notes = state.notes;
+            notes = state.notes ?? [];
           });
         }
       },
@@ -68,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : RefreshIndicator(
                   child: _buildNoteList(notes),
                   onRefresh: () async {
-                    context.read<AppBloc>().add(AppRefreshEvent());
+                    context.read<AppCubit>().refreshNote();
                   },
                 ),
         ),
@@ -92,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .pushNamed("/detail", arguments: NoteParams(isNewNote: true))
         .then(
       (value) {
-        context.read<AppBloc>().add(AppRefreshEvent());
+        context.read<AppCubit>().refreshNote();
       },
     );
   }
@@ -115,14 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
       listenWhen: (previous, current) {
         if (previous is NoteDeletingState &&
             current is NoteDeleteSuccessState) {
-          context.read<AppBloc>().add(AppRefreshEvent());
+          context.read<AppCubit>().refreshNote();
           return true;
         }
         if (previous is NoteAddingState && current is NoteAddSuccessState) {
-          context.read<AppBloc>().add(AppRefreshEvent());
+          context.read<AppCubit>().refreshNote();
         }
         if (previous is NoteEditingState && current is NoteEditSuccessState) {
-          context.read<AppBloc>().add(AppRefreshEvent());
+          context.read<AppCubit>().refreshNote();
         }
         return false;
       },
@@ -156,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToSearch(BuildContext context) {
     Navigator.of(context).pushNamed("/search").then((value) {
-      context.read<AppBloc>().add(AppRefreshEvent());
+      context.read<AppCubit>().refreshNote();
     });
   }
 
@@ -256,9 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 scaffoldKey.currentContext!
                     .read<NoteBloc>()
                     .add(NoteAddEvent(note: note));
-                scaffoldKey.currentContext!
-                    .read<AppBloc>()
-                    .add(AppRefreshEvent());
+                scaffoldKey.currentContext!.read<AppCubit>().refreshNote();
                 ScaffoldMessenger.of(scaffoldKey.currentContext!)
                     .removeCurrentSnackBar();
               },

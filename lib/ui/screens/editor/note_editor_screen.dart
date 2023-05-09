@@ -32,7 +32,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final ScrollController scrollController = ScrollController();
   late TextEditingController titleEditController;
   NoteParams? noteParams;
-  Color editorBackground = Colors.black;
+  late Color editorBackground;
 
   @override
   void dispose() {
@@ -57,6 +57,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (noteParams?.isNewNote != true) {
       context.read<NoteCubit>().loadNote(noteId: noteParams!.id!);
     }
+    editorBackground = context.read<AppSettingsCubit>().isLightTheme
+        ? Colors.white
+        : Colors.black;
   }
 
   @override
@@ -69,12 +72,14 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       child: BlocConsumer<NoteCubit, NoteState>(
         listener: (context, state) {
           log("Editor state: ${state.crudStatus}");
-          setState(() {
-            editorBackground = HexColor.fromHexString(state.note!.color);
-            titleEditController.text = state.note!.title;
-            quillController.document =
-                quill.Document.fromJson(jsonDecode(state.note!.content));
-          });
+          if (state.crudStatus == CrudStatus.success) {
+            setState(() {
+              editorBackground = HexColor.fromHexString(state.note!.color);
+              titleEditController.text = state.note!.title;
+              quillController.document =
+                  quill.Document.fromJson(jsonDecode(state.note!.content));
+            });
+          }
         },
         builder: (context, state) => Scaffold(
           backgroundColor: editorBackground,
@@ -168,10 +173,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: context.read<AppSettingsCubit>().isLightTheme ? Colors.white : Colors.black,
-        title:  Text(
+        backgroundColor: context.read<AppSettingsCubit>().isLightTheme
+            ? Colors.white
+            : Colors.black,
+        title: Text(
           "Save changes?",
-          style: TextStyle(color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white, fontFamily: "Nunito"),
+          style: TextStyle(
+              color: context.read<AppSettingsCubit>().isLightTheme
+                  ? Colors.black
+                  : Colors.white,
+              fontFamily: "Nunito"),
         ),
         actions: [
           TextButton(
@@ -184,10 +195,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               hideKeyboard();
               Navigator.popUntil(context, ModalRoute.withName("/"));
             },
-            child:  Text(
+            child: Text(
               "Yes",
               style: TextStyle(
-                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
+                color: context.read<AppSettingsCubit>().isLightTheme
+                    ? Colors.black
+                    : Colors.white,
                 fontFamily: "Nunito",
               ),
             ),
@@ -197,10 +210,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               hideKeyboard();
               Navigator.popUntil(context, ModalRoute.withName("/"));
             },
-            child:  Text(
+            child: Text(
               "Discard",
               style: TextStyle(
-                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
+                color: context.read<AppSettingsCubit>().isLightTheme
+                    ? Colors.black
+                    : Colors.white,
                 fontFamily: "Nunito",
               ),
             ),
@@ -209,10 +224,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             onPressed: () {
               Navigator.pop(context);
             },
-            child:  Text(
+            child: Text(
               "Cancel",
               style: TextStyle(
-                color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
+                color: context.read<AppSettingsCubit>().isLightTheme
+                    ? Colors.black
+                    : Colors.white,
                 fontFamily: "Nunito",
               ),
             ),
@@ -264,8 +281,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
             customStyles: quill.DefaultStyles(
               color: editorBackground,
               paragraph: quill.DefaultListBlockStyle(
-                 TextStyle(
-                    color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white, fontFamily: "Nunito", fontSize: 23),
+                TextStyle(
+                    color: context.read<AppSettingsCubit>().isLightTheme
+                        ? Colors.black
+                        : Colors.white,
+                    fontFamily: "Nunito",
+                    fontSize: 23),
                 const quill.VerticalSpacing(6, 0),
                 const quill.VerticalSpacing(8, 8),
                 null,
@@ -306,9 +327,13 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               hintStyle: TextStyle(color: HexColor.fromHexString("9A9A9A"))),
           maxLines: null,
           keyboardType: TextInputType.multiline,
-          cursorColor: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
-          style:  TextStyle(
-            color: context.read<AppSettingsCubit>().isLightTheme ? Colors.black : Colors.white,
+          cursorColor: context.read<AppSettingsCubit>().isLightTheme
+              ? Colors.black
+              : Colors.white,
+          style: TextStyle(
+            color: context.read<AppSettingsCubit>().isLightTheme
+                ? Colors.black
+                : Colors.white,
             fontFamily: "Nunito",
             fontSize: 35,
           ),

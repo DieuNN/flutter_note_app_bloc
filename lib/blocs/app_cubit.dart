@@ -15,18 +15,27 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(loadStatus: LoadStatus.initial));
   }
 
-  void loadNotes() async {
+  Future<void> loadNotes() async {
     try {
       emit(state.copyWith(loadStatus: LoadStatus.loading));
       final notes = await noteRepository.getNotes();
-      emit(state.copyWith(notes: notes, loadStatus: LoadStatus.success));
+      emit(
+        state.copyWith(
+          notes: notes,
+          loadStatus: LoadStatus.success,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-          loadStatus: LoadStatus.failure, errorMessage: e.toString()));
+      emit(
+        state.copyWith(
+          loadStatus: LoadStatus.failure,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
-  void refreshNote() async {
+  Future<void> refreshNote() async {
     try {
       emit(state.copyWith(loadStatus: LoadStatus.refreshing));
       final notes = await noteRepository.getNotes();

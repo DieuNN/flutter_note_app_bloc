@@ -2,8 +2,6 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
-import 'package:note_app/models/enums/app_theme.dart';
 
 part 'app_settings_state.dart';
 

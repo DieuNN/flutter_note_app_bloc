@@ -23,7 +23,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
 
     List<Note> result = [];
     for (var note in notes) {
-      result.add(Note(
+       result.add(Note(
           id: note["id"],
           title: note["title"],
           content: note["content"],
@@ -37,7 +37,7 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
     try {
       log("start adding note");
       var database = await _getDatabase();
-      var id = database.getInt("note_number");
+      var id =  database.getInt("note_number");
       var notes = await _getSavedNote(database);
       log(jsonEncode(notes));
       notes.add(
@@ -49,10 +49,10 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
       );
 
       var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
+      await database.setString("notes", encodedNotes);
       log("Note added: ${note.id}, ${note.title}, ${note.content}, ${note.color}");
       id = id! + 1;
-      database.setInt("note_number", id);
+     await  database.setInt("note_number", id);
       return true;
     } catch (e) {
       log(e.toString());
@@ -68,12 +68,14 @@ class NoteSharedPreferencesRepositoryImpl extends NoteRepository {
       var database = await _getDatabase();
       var notes = await _getSavedNote(database);
       notes.removeWhere((element) => element.id == id);
-      var encodedNotes = jsonEncode(notes);
-      database.setString("notes", encodedNotes);
+      var encodedNotes =  jsonEncode(notes);
+      await database.setString("notes", encodedNotes);
       var end = DateTime.now().millisecondsSinceEpoch;
       log("Note deleted, in ${end - start}ms");
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      log(e.toString());
+      log(stackTrace.toString());
       return false;
     }
   }

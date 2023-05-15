@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,11 +5,8 @@ import 'package:note_app/blocs/app_cubit.dart';
 import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
-import 'package:note_app/models/enums/app_theme.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:note_app/ui/screens/note/note_cubit.dart';
-import 'package:note_app/ui/screens/note/note_screen.dart';
 
 class NoteItemWidget extends StatelessWidget {
   final Note note;
@@ -23,14 +19,15 @@ class NoteItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isLightTheme =
-        context.read<AppSettingsCubit>().isLightTheme;
+    bool isLightTheme = context.read<AppSettingsCubit>().isLightTheme;
     return Slidable(
       key: UniqueKey(),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
         dismissible: DismissiblePane(
-          onDismissed: () => onDelete!(),
+          onDismissed: () {
+            onDelete!();
+          },
         ),
         children: [
           SlidableAction(

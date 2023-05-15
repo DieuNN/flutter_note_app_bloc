@@ -58,7 +58,7 @@ class NoteSqliteRepositoryImpl implements NoteRepository {
       int id = int.parse(note["id"].toString());
       String content = note["content"].toString();
       String color = note["color"].toString();
-      log("${note}");
+      log("$note");
       return Note(id: id, title: title, content: content, color: color);
     } catch (e) {
       log(e.toString());

@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/enums/search_status.dart';
-import 'package:note_app/ui/screens/note/note_cubit.dart';
 import 'package:note_app/ui/screens/search/search_cubit.dart';
 import 'package:note_app/ui/widgets/home/note_item.dart';
 import 'package:note_app/ui/widgets/search/no_result.dart';
@@ -55,7 +54,6 @@ class _SearchScreenState extends State<SearchScreen> {
       child: BlocBuilder<SearchCubit, SearchState>(
         builder: (context, state) {
           if (state.searchStatus == SearchStatus.success) {
-            var notes = state.notes;
             if (state.notes!.isEmpty ||
                 _textEditingController.text.trim().isEmpty) {
               return const Center(child: NoResultWidget());

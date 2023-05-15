@@ -6,7 +6,6 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:note_app/blocs/app_cubit.dart';
 import 'package:note_app/blocs/settings/app_settings_cubit.dart';
-import 'package:note_app/models/enums/app_theme.dart';
 import 'package:note_app/models/enums/database_type.dart';
 import 'package:note_app/models/enums/load_status.dart';
 import 'package:note_app/repository/implements/note_hive_impl.dart';

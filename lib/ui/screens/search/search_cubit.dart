@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:note_app/models/entity/note.dart';
 import 'package:note_app/models/enums/search_status.dart';
 import 'package:note_app/repository/note_repository.dart';

@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:note_app/models/entity/note.dart';
 

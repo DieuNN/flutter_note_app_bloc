@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/app_constants.dart';
 import 'package:note_app/common/extensions.dart';
-import 'package:note_app/models/enums/app_theme.dart';
 
 class HomeAppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onSearchClick;

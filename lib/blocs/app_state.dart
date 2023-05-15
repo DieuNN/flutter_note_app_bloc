@@ -15,5 +15,5 @@ class AppState extends Equatable {
       );
 
   @override
-  List<Object?> get props => [loadStatus, notes];
+  List<Object?> get props => [loadStatus, notes, errorMessage];
 }

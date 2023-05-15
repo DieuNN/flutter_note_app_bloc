@@ -10,9 +10,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:note_app/blocs/settings/app_settings_cubit.dart';
 import 'package:note_app/common/extensions.dart';
 import 'package:note_app/models/entity/note.dart';
-import 'package:note_app/models/enums/app_theme.dart';
 import 'package:note_app/models/enums/editor_status.dart';
-import 'package:note_app/models/enums/load_status.dart';
 import 'package:note_app/models/params/note_params.dart';
 import 'package:note_app/ui/screens/editor/editor_cubit.dart';
 import 'package:note_app/ui/screens/note/note_cubit.dart';
@@ -74,8 +72,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           log("Editor state: ${state.crudStatus}");
           if (state.crudStatus == CrudStatus.success) {
             setState(() {
-              editorBackground = HexColor.fromHexString(state.note!.color);
-              titleEditController.text = state.note!.title;
+              editorBackground = HexColor.fromHexString(state.note?.color ?? "#FFFFFF");
+              titleEditController.text = state.note?.title ?? "";
               quillController.document =
                   quill.Document.fromJson(jsonDecode(state.note!.content));
             });
